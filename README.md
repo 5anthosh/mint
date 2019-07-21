@@ -1,3 +1,4 @@
-# mint
+# Mint web framework
  - minimalistic web framework
- - easy to Use
+ - built over gorilla mux
+ 
