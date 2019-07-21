@@ -23,13 +23,14 @@ type Context struct {
 	*HandlersContext
 	Request    *http.Request
 	Response   http.ResponseWriter
+	Method     string
 	store      map[string]interface{}
 	URLParams  map[string]string
 	Params     map[string]string
 	DB         *sql.DB
 	index      int8
 	StatusCode int
-	Size       int
+	size       int
 	Error      []error
 	CR         bool
 }
@@ -37,6 +38,7 @@ type Context struct {
 func (app *Mint) newContext() *Context {
 	return &Context{
 		Params: make(map[string]string),
+		DB:     app.DB,
 	}
 }
 
@@ -48,7 +50,7 @@ func (c *Context) Reset() {
 	c.Params = make(map[string]string)
 	c.store = make(map[string]interface{})
 	c.StatusCode = 0
-	c.Size = 0
+	c.size = 0
 	c.Error = c.Error[0:0]
 	c.index = 0
 	c.CR = false
@@ -167,7 +169,7 @@ func (c *Context) uncompressedJSON(reponse interface{}) {
 }
 
 func (c *Context) setSize(size int) {
-	c.Size += size
+	c.size += size
 }
 
 //AppendError records error to be displayed later

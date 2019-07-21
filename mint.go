@@ -2,6 +2,7 @@ package mint
 
 import (
 	"compress/gzip"
+	"database/sql"
 	"net/http"
 	"sync"
 
@@ -22,6 +23,7 @@ type Mint struct {
 	router         *mux.Router
 	contextPool    *sync.Pool
 	gzipWriterPool *sync.Pool
+	DB             *sql.DB
 }
 
 //Path #
@@ -29,6 +31,12 @@ func (mt *Mint) Path(path string) *HandlersContext {
 	handlerContext := newHandlerContext(mt)
 	mt.handlers = append(mt.handlers, handlerContext)
 	return handlerContext.Path(path)
+}
+
+//RegisterDB sets db connection
+func (mt *Mint) RegisterDB(db Database) *Mint {
+	mt.DB = db.Connection()
+	return mt
 }
 
 //Get #

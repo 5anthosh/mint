@@ -51,7 +51,9 @@ func (hc *HandlersContext) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	c.HandlersContext = hc
 	c.URLParams = mux.Vars(req)
 	c.Request = req
+	c.Method = req.Method
 	c.Response = w
+	c.DB = hc.mint.DB
 	c.Next()
 	hc.mint.contextPool.Put(c)
 }
