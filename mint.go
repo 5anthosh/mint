@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	mutex sync.RWMutex
+	mutex          sync.RWMutex
+	defaultHandler = []Handler{loggerMW, customHeadersMW}
 )
 
 //Mint #
@@ -58,7 +59,8 @@ func (mt *Mint) Set(key string, value interface{}) {
 func (mt *Mint) Views(vcs Views) *Mint {
 	for _, vc := range vcs {
 		handlerContext := newHandlerContext(mt)
-		handlerContext.Path(vc.path).Handlers(vc.handlers...).Methods(vc.methods...)
+		handlerContext.Path(vc.path).Handlers(vc.handlers...).Methods(vc.methods...).Compressed(vc.compressed)
+		mt.handlers = append(mt.handlers, handlerContext)
 	}
 	return mt
 }
@@ -66,7 +68,7 @@ func (mt *Mint) Views(vcs Views) *Mint {
 //View #
 func (mt *Mint) View(vc ViewContext) *HandlersContext {
 	handlerContext := newHandlerContext(mt)
-	return handlerContext.Path(vc.path).Handlers(vc.handlers...).Methods(vc.methods...)
+	return handlerContext.Path(vc.path).Handlers(vc.handlers...).Methods(vc.methods...).Compressed(vc.compressed)
 }
 
 //HandleStatic registers a new handler to handle static content such as img, css, html, js.
@@ -78,7 +80,7 @@ func (mt *Mint) HandleStatic(path string, dir string) {
 func (mt *Mint) buildViews() {
 
 	for _, handler := range mt.handlers {
-		mt.router.PathPrefix(handler.path).Handler(handler).Methods(handler.methods...)
+		mt.router.Handle(handler.path, handler).Methods(handler.methods...)
 	}
 	if len(mt.staticPath) != 0 {
 		mt.router.PathPrefix(mt.staticPath).Handler(mt.staticHandler)
@@ -96,6 +98,7 @@ func New() *Mint {
 			return gzip.NewWriter(nil)
 		},
 	}
+	mintEngine.defaultHandler = defaultHandler
 	mintEngine.store = make(map[string]interface{})
 	mintEngine.router = NewRouter()
 	return mintEngine
