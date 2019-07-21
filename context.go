@@ -2,6 +2,7 @@ package mint
 
 import (
 	"compress/gzip"
+	"database/sql"
 	"encoding/json"
 	"net"
 	"net/http"
@@ -25,6 +26,7 @@ type Context struct {
 	store      map[string]interface{}
 	URLParams  map[string]string
 	Params     map[string]string
+	DB         *sql.DB
 	index      int8
 	StatusCode int
 	Size       int
