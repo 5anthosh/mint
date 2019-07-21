@@ -1,4 +1,37 @@
 # Mint web framework
- - minimalistic web framework
- - built over gorilla mux
+
+  it is simple lightweight web framework, it helps to keep the core simple but extensible. Mint uses gorilla mux router.
+  Mint does not include a database abstraction layer or body validation or anything else 
+
+## Installation
+
+  To use Mint package, you need to install Go first in your system and its workspace
+
+```sh
+$ go get -u github.com/gin-gonic/gin
+```
+
+## A Simple Example
  
+  In example.go file
+``` go 
+package main
+
+import (
+	"mint"
+)
+
+func main() {
+	r := mint.New()
+	r.GET("/{message}", func(c *mint.Context) {
+		c.JSON(200, mint.JSON{
+			"message": c.URLParams["message"],
+		})
+	})
+	r.Run("8080")
+}
+```
+   To run the program
+```
+$ go run example.go
+```
