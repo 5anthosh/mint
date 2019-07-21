@@ -3,9 +3,11 @@ package mint
 import (
 	"compress/gzip"
 	"database/sql"
+	"fmt"
 	"net/http"
 	"sync"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -13,6 +15,9 @@ var (
 	mutex          sync.RWMutex
 	defaultHandler = []Handler{loggerMW, customHeadersMW}
 )
+
+//JSON basic json type
+type JSON map[string]interface{}
 
 //Mint #
 type Mint struct {
@@ -25,6 +30,7 @@ type Mint struct {
 	contextPool    *sync.Pool
 	gzipWriterPool *sync.Pool
 	DB             *sql.DB
+	built          bool
 }
 
 //Path #
@@ -58,17 +64,17 @@ func (mt *Mint) Set(key string, value interface{}) {
 //Views #
 func (mt *Mint) Views(vcs Views) *Mint {
 	for _, vc := range vcs {
-		handlerContext := newHandlerContext(mt)
-		handlerContext.Path(vc.path).Handlers(vc.handlers...).Methods(vc.methods...).Compressed(vc.compressed)
-		mt.handlers = append(mt.handlers, handlerContext)
+		mt.View(vc)
 	}
 	return mt
 }
 
 //View #
-func (mt *Mint) View(vc ViewContext) *HandlersContext {
+func (mt *Mint) View(vc ViewContext) *Mint {
 	handlerContext := newHandlerContext(mt)
-	return handlerContext.Path(vc.path).Handlers(vc.handlers...).Methods(vc.methods...).Compressed(vc.compressed)
+	handlerContext.Path(vc.path).Handlers(vc.handlers...).Methods(vc.methods...).Compressed(vc.compressed)
+	mt.handlers = append(mt.handlers, handlerContext)
+	return mt
 }
 
 //HandleStatic registers a new handler to handle static content such as img, css, html, js.
@@ -101,11 +107,61 @@ func New() *Mint {
 	mintEngine.defaultHandler = defaultHandler
 	mintEngine.store = make(map[string]interface{})
 	mintEngine.router = NewRouter()
+	mintEngine.built = false
 	return mintEngine
 }
 
 //Build the application
 func (mt *Mint) Build() *mux.Router {
-	mt.buildViews()
+	if !mt.built {
+		mt.buildViews()
+		mt.built = true
+	}
 	return mt.router
+}
+
+//GET register get handler
+func (mt *Mint) GET(path string, handler Handler) *HandlersContext {
+	return mt.SimpleHandler(path, http.MethodGet, handler)
+}
+
+//POST registers post handler
+func (mt *Mint) POST(path string, handler Handler) *HandlersContext {
+	return mt.SimpleHandler(path, http.MethodPost, handler)
+}
+
+//SimpleHandler registers simple handler
+func (mt *Mint) SimpleHandler(path string, method string, handler Handler) *HandlersContext {
+	hc := newHandlerContext(mt)
+	hc.Methods(method)
+	hc.Handlers(handler)
+	hc.Path(path)
+	mt.handlers = append(mt.handlers, hc)
+	return hc
+}
+
+//PUT register simple PUT handler
+func (mt *Mint) PUT(path string, handler Handler) *HandlersContext {
+	return mt.SimpleHandler(path, http.MethodPut, handler)
+}
+
+//DELETE register simple delete handler
+func (mt *Mint) DELETE(path string, handler Handler) *HandlersContext {
+	return mt.SimpleHandler(path, http.MethodDelete, handler)
+}
+
+//Run runs application
+func (mt *Mint) Run(port string) {
+	serverAdd := ":" + port
+	fmt.Println("🚀  Starting server....")
+
+	protocal := "http"
+	var err error
+	localAddress := protocal + "://localhost" + serverAdd
+	fmt.Println("🌠 Ready on " + localAddress)
+	err = http.ListenAndServe(serverAdd, handlers.RecoveryHandler()(mt.Build()))
+	if err != nil {
+		fmt.Println("Stopping the server" + err.Error())
+	}
+
 }
