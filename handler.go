@@ -11,10 +11,11 @@ type Handler func(*Context)
 
 //HandlersContext #
 type HandlersContext struct {
-	mint     *Mint
-	handlers []Handler
-	methods  []string
-	path     string
+	mint       *Mint
+	handlers   []Handler
+	methods    []string
+	path       string
+	compressed bool
 }
 
 //newHandlerContext creates new app handler
@@ -41,6 +42,12 @@ func (hc *HandlersContext) Handlers(handlers ...Handler) *HandlersContext {
 //Path #
 func (hc *HandlersContext) Path(path string) *HandlersContext {
 	hc.path = path
+	return hc
+}
+
+//Compressed #
+func (hc *HandlersContext) Compressed(isCompressed bool) *HandlersContext {
+	hc.compressed = isCompressed
 	return hc
 }
 
