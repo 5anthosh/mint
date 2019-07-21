@@ -87,21 +87,22 @@ func (mt *Mint) buildViews() {
 
 //New creates new application
 func New() *Mint {
-	app := &Mint{}
-	app.contextPool = &sync.Pool{
-		New: newContextPool(app),
+	mintEngine := &Mint{}
+	mintEngine.contextPool = &sync.Pool{
+		New: newContextPool(mintEngine),
 	}
-	app.gzipWriterPool = &sync.Pool{
+	mintEngine.gzipWriterPool = &sync.Pool{
 		New: func() interface{} {
 			return gzip.NewWriter(nil)
 		},
 	}
-	app.store = make(map[string]interface{})
-	app.router = NewRouter()
-	return app
+	mintEngine.store = make(map[string]interface{})
+	mintEngine.router = NewRouter()
+	return mintEngine
 }
 
 //Build the application
-func (mt *Mint) Build() {
+func (mt *Mint) Build() *mux.Router {
 	mt.buildViews()
+	return mt.router
 }
