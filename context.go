@@ -57,6 +57,16 @@ func newContextPool(app *Mint) func() interface{} {
 	}
 }
 
+//Get #
+func (c *Context) Get(key string) interface{} {
+	return c.store[key]
+}
+
+//Set #
+func (c *Context) Set(key string, value interface{}) {
+	c.store[key] = value
+}
+
 //GetRequestHeader returns request header
 func (c *Context) GetRequestHeader(key string) string {
 	return c.Request.Header.Get(key)
