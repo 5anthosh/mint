@@ -8,7 +8,7 @@
   To use Mint package, you need to install Go first in your system and set its workspace
 
 ```sh
-$ go get -u github.com/gin-gonic/gin
+$ go get -u github.com/5anthosh/mint
 ```
 
 ## A Simple Example
