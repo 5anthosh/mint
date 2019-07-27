@@ -19,20 +19,22 @@ var (
 )
 
 //Context provides context for whole request/response cycle
+//It helps to pass variable from one middlware to another
+
 type Context struct {
 	*HandlersContext
-	Request    *http.Request
-	Response   http.ResponseWriter
-	Method     string
-	store      map[string]interface{}
-	URLParams  map[string]string
-	Params     map[string]string
-	DB         *sql.DB
-	index      int8
-	StatusCode int
-	size       int
-	Error      []error
-	CR         bool
+	Request   *http.Request
+	Response  http.ResponseWriter
+	Method    string
+	store     map[string]interface{}
+	URLParams map[string]string
+	Params    map[string]string
+	DB        *sql.DB
+	index     int8
+	status    int
+	size      int
+	Error     []error
+	CR        bool
 }
 
 func (app *Mint) newContext() *Context {
@@ -49,7 +51,7 @@ func (c *Context) Reset() {
 	c.Response = nil
 	c.Params = make(map[string]string)
 	c.store = make(map[string]interface{})
-	c.StatusCode = 0
+	c.status = 0
 	c.size = 0
 	c.Error = c.Error[0:0]
 	c.index = 0
@@ -63,11 +65,17 @@ func newContextPool(app *Mint) func() interface{} {
 
 //Get #
 func (c *Context) Get(key string) interface{} {
+	if c.store == nil {
+		return nil
+	}
 	return c.store[key]
 }
 
 //Set #
 func (c *Context) Set(key string, value interface{}) {
+	if c.store == nil {
+		c.store = make(map[string]interface{})
+	}
 	c.store[key] = value
 }
 
@@ -76,9 +84,9 @@ func (c *Context) GetRequestHeader(key string) string {
 	return c.Request.Header.Get(key)
 }
 
-//HTTPStatus set http status code
-func (c *Context) HTTPStatus(status int) {
-	c.StatusCode = status
+//Status set http status code
+func (c *Context) Status(status int) {
+	c.status = status
 	c.Response.WriteHeader(status)
 }
 
@@ -94,9 +102,9 @@ func (c *Context) SetHeader(key string, value []string) {
 	}
 }
 
-//AddHeader #
+//AddHeader add header to the response
 func (c *Context) AddHeader(key string, value string) {
-	c.Response.Header().Set(key, value)
+	c.Response.Header().Add(key, value)
 }
 func bodyAllowedForStatus(status int) bool {
 	switch {
@@ -111,11 +119,11 @@ func bodyAllowedForStatus(status int) bool {
 }
 
 //CJSON writes compressed json response
-func (c *Context) compressedJSON(reponse interface{}) {
+func (c *Context) compressedJSON(code int, reponse interface{}) {
 	// create header
-	c.writeContentType(jsonContentType)
-	c.AddHeader("Content-Encoding", "gzip")
+	c.SetHeader("Content-Encoding", []string{"gzip"})
 	// Gzip data
+	c.Status(code)
 	gz := c.mint.gzipWriterPool.Get().(*gzip.Writer)
 	gz.Reset(c.Response)
 	jsonContentByte, err := json.Marshal(reponse)
@@ -138,19 +146,21 @@ func (c *Context) compressedJSON(reponse interface{}) {
 
 //JSON #
 func (c *Context) JSON(code int, response interface{}) {
-	c.HTTPStatus(code)
+	c.SetHeader("Content-Type", []string{"application/json"})
 	if bodyAllowedForStatus(code) {
 		if c.CR {
-			c.compressedJSON(response)
+			c.compressedJSON(code, response)
 		} else {
-			c.uncompressedJSON(response)
+			c.uncompressedJSON(code, response)
 		}
+	} else {
+		c.Status(code)
 	}
 }
 
 //JSON writes json response
-func (c *Context) uncompressedJSON(reponse interface{}) {
-	c.Response.Header().Add("Content-Type", "application/json")
+func (c *Context) uncompressedJSON(code int, reponse interface{}) {
+	c.Status(code)
 	jsonContentByte, err := json.Marshal(reponse)
 	if err != nil {
 		c.AppendError(err)

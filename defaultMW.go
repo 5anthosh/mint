@@ -13,7 +13,7 @@ func loggerMW(c *Context) {
 	log.TimeStamp = time.Now()
 	log.Latency = log.TimeStamp.Sub(start)
 	log.Method = c.Method
-	log.StatusCode = c.StatusCode
+	log.StatusCode = c.status
 	log.ClientIP = c.ClientIP()
 	log.BodySize = c.size
 	log.Path = path

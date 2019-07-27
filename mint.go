@@ -19,9 +19,12 @@ var (
 //JSON basic json type
 type JSON map[string]interface{}
 
-//Mint #
+//Mint is framework's instance, it contains default middleware, DB, handlers configuration
+//Create Intance of Mint using New() method
 type Mint struct {
+	// defaultHandler is default middleware like logger, Custom Headers
 	defaultHandler []Handler
+	//handlers contains HandlersContext information
 	handlers       []*HandlersContext
 	store          map[string]interface{}
 	staticPath     string
@@ -33,7 +36,7 @@ type Mint struct {
 	built          bool
 }
 
-//Path #
+//Path sets URL Path to handler
 func (mt *Mint) Path(path string) *HandlersContext {
 	handlerContext := newHandlerContext(mt)
 	mt.handlers = append(mt.handlers, handlerContext)
@@ -46,7 +49,7 @@ func (mt *Mint) RegisterDB(db Database) *Mint {
 	return mt
 }
 
-//Get #
+//Get the value from store by key
 func (mt *Mint) Get(key string) interface{} {
 	mutex.RLock()
 	value := mt.store[key]
@@ -54,14 +57,14 @@ func (mt *Mint) Get(key string) interface{} {
 	return value
 }
 
-//Set #
+//Set the value to store with key
 func (mt *Mint) Set(key string, value interface{}) {
 	mutex.Lock()
 	mt.store[key] = value
 	mutex.Unlock()
 }
 
-//Views #
+//Views registers more than one view to application
 func (mt *Mint) Views(vcs Views) *Mint {
 	for _, vc := range vcs {
 		mt.View(vc)
@@ -69,7 +72,7 @@ func (mt *Mint) Views(vcs Views) *Mint {
 	return mt
 }
 
-//View #
+//View registers a single view to application
 func (mt *Mint) View(vc ViewContext) *Mint {
 	handlerContext := newHandlerContext(mt)
 	handlerContext.Path(vc.path).Handlers(vc.handlers...).Methods(vc.methods...).Compressed(vc.compressed)

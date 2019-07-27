@@ -35,7 +35,7 @@ func (hc *HandlersContext) Methods(methods ...string) *HandlersContext {
 
 //Handlers #
 func (hc *HandlersContext) Handlers(handlers ...Handler) *HandlersContext {
-	hc.handlers = append(hc.handlers, handlers...)
+	hc.use(handlers...)
 	return hc
 }
 
