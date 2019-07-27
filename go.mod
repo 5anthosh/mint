@@ -1,4 +1,4 @@
-module mint
+module github.com/5anthosh/mint
 
 go 1.12
 
