@@ -26,6 +26,7 @@ type Mint struct {
 	defaultHandler []Handler
 	//handlers contains HandlersContext information
 	handlers       []*HandlersContext
+	groupHandlers  []*HandlersGroup
 	store          map[string]interface{}
 	staticPath     string
 	staticHandler  http.Handler
@@ -89,7 +90,10 @@ func (mt *Mint) HandleStatic(path string, dir string) {
 func (mt *Mint) buildViews() {
 
 	for _, handler := range mt.handlers {
-		mt.router.Handle(handler.path, handler).Methods(handler.methods...)
+		handler.build(mt.router)
+	}
+	for _, handlerGroup := range mt.groupHandlers {
+		handlerGroup.build(mt.router)
 	}
 	if len(mt.staticPath) != 0 {
 		mt.router.PathPrefix(mt.staticPath).Handler(mt.staticHandler)
@@ -98,20 +102,14 @@ func (mt *Mint) buildViews() {
 
 //New creates new application
 func New() *Mint {
-	mintEngine := &Mint{}
-	mintEngine.contextPool = &sync.Pool{
-		New: newContextPool(mintEngine),
-	}
-	mintEngine.gzipWriterPool = &sync.Pool{
-		New: func() interface{} {
-			return gzip.NewWriter(nil)
-		},
-	}
+	mintEngine := Simple()
 	mintEngine.defaultHandler = defaultHandler
-	mintEngine.store = make(map[string]interface{})
-	mintEngine.router = NewRouter()
-	mintEngine.built = false
 	return mintEngine
+}
+
+//Use register new middleware
+func (mt *Mint) Use(handler ...Handler) {
+	mt.defaultHandler = append(mt.defaultHandler, handler...)
 }
 
 //Build the application
@@ -121,6 +119,23 @@ func (mt *Mint) Build() *mux.Router {
 		mt.built = true
 	}
 	return mt.router
+}
+
+//Simple creates new application without any defualt handlers
+func Simple() *Mint {
+	mintEngine := &Mint{}
+	mintEngine.contextPool = &sync.Pool{
+		New: newContextPool(mintEngine),
+	}
+	mintEngine.gzipWriterPool = &sync.Pool{
+		New: func() interface{} {
+			return gzip.NewWriter(nil)
+		},
+	}
+	mintEngine.store = make(map[string]interface{})
+	mintEngine.router = NewRouter()
+	mintEngine.built = false
+	return mintEngine
 }
 
 //GET register get handler
@@ -134,10 +149,10 @@ func (mt *Mint) POST(path string, handler Handler) *HandlersContext {
 }
 
 //SimpleHandler registers simple handler
-func (mt *Mint) SimpleHandler(path string, method string, handler Handler) *HandlersContext {
+func (mt *Mint) SimpleHandler(path string, method string, handler ...Handler) *HandlersContext {
 	hc := newHandlerContext(mt)
 	hc.Methods(method)
-	hc.Handlers(handler)
+	hc.Handlers(handler...)
 	hc.Path(path)
 	mt.handlers = append(mt.handlers, hc)
 	return hc

@@ -14,6 +14,9 @@ type HandlersContext struct {
 	mint       *Mint
 	handlers   []Handler
 	methods    []string
+	schemes    []string
+	headers    []string
+	queries    []string
 	path       string
 	compressed bool
 }
@@ -27,6 +30,14 @@ func newHandlerContext(mint *Mint) *HandlersContext {
 	return handlerContext
 }
 
+func (hc *HandlersContext) build(router *mux.Router) {
+	router.Handle(hc.path, hc).
+		Methods(hc.methods...).
+		Schemes(hc.schemes...).
+		Headers(hc.headers...).
+		Queries(hc.queries...)
+}
+
 //Methods #
 func (hc *HandlersContext) Methods(methods ...string) *HandlersContext {
 	hc.methods = append(hc.methods, methods...)
@@ -36,6 +47,24 @@ func (hc *HandlersContext) Methods(methods ...string) *HandlersContext {
 //Handlers #
 func (hc *HandlersContext) Handlers(handlers ...Handler) *HandlersContext {
 	hc.use(handlers...)
+	return hc
+}
+
+//Schemes #
+func (hc *HandlersContext) Schemes(schemes ...string) *HandlersContext {
+	hc.schemes = append(hc.schemes, schemes...)
+	return hc
+}
+
+//Headers #
+func (hc *HandlersContext) Headers(headers ...string) *HandlersContext {
+	hc.headers = append(hc.headers, headers...)
+	return hc
+}
+
+//Queries #
+func (hc *HandlersContext) Queries(queries ...string) *HandlersContext {
+	hc.queries = append(hc.queries, queries...)
 	return hc
 }
 
