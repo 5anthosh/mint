@@ -2,6 +2,7 @@ package mint
 
 import (
 	"compress/gzip"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net"
@@ -20,15 +21,12 @@ var (
 
 //Context provides context for whole request/response cycle
 //It helps to pass variable from one middlware to another
-
 type Context struct {
 	*HandlersContext
 	Request   *http.Request
 	Response  http.ResponseWriter
 	Method    string
-	store     map[string]interface{}
 	URLParams map[string]string
-	Params    map[string]string
 	DB        *sql.DB
 	index     int8
 	status    int
@@ -39,8 +37,7 @@ type Context struct {
 
 func (app *Mint) newContext() *Context {
 	return &Context{
-		Params: make(map[string]string),
-		DB:     app.DB,
+		DB: app.DB,
 	}
 }
 
@@ -49,8 +46,6 @@ func (c *Context) Reset() {
 	c.HandlersContext = nil
 	c.Request = nil
 	c.Response = nil
-	c.Params = make(map[string]string)
-	c.store = make(map[string]interface{})
 	c.status = 0
 	c.size = 0
 	c.Error = c.Error[0:0]
@@ -63,24 +58,8 @@ func newContextPool(app *Mint) func() interface{} {
 	}
 }
 
-//Get #
-func (c *Context) Get(key string) interface{} {
-	if c.store == nil {
-		return nil
-	}
-	return c.store[key]
-}
-
-//Set #
-func (c *Context) Set(key string, value interface{}) {
-	if c.store == nil {
-		c.store = make(map[string]interface{})
-	}
-	c.store[key] = value
-}
-
-//GetRequestHeader returns request header
-func (c *Context) GetRequestHeader(key string) string {
+//GetHeader returns request header
+func (c *Context) GetHeader(key string) string {
 	return c.Request.Header.Get(key)
 }
 
@@ -191,10 +170,10 @@ func (c *Context) AppendError(err ...error) {
 
 //ClientIP returns ip address of the user using request info
 func (c *Context) ClientIP() string {
-	clientIP := c.GetRequestHeader("X-Forwarded-For")
+	clientIP := c.GetHeader("X-Forwarded-For")
 	clientIP = strings.TrimSpace(strings.Split(clientIP, ",")[0])
 	if clientIP == emptyString {
-		clientIP = strings.TrimSpace(c.GetRequestHeader("X-Real-Ip"))
+		clientIP = strings.TrimSpace(c.GetHeader("X-Real-Ip"))
 	}
 	if clientIP != emptyString {
 		return clientIP
@@ -215,4 +194,22 @@ func (c *Context) Next() {
 //GetURLQuery get the params in url (Eg . /?q=)
 func (c *Context) GetURLQuery(query string) string {
 	return c.Request.URL.Query().Get(query)
+}
+
+//Get #
+func (c *Context) Get(key interface{}) interface{} {
+	return c.Request.Context().Value(key)
+}
+
+//Set #
+func (c *Context) Set(key, val interface{}) {
+	if val == nil {
+		return
+	}
+	c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), key, val))
+}
+
+// Path gets request uri
+func (c *Context) Path() string {
+	return c.Request.RequestURI
 }

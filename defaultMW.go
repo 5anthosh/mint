@@ -23,7 +23,7 @@ func loggerMW(c *Context) {
 
 //CustomHeaders parse the headers of request and set Corrosponding context value
 func customHeadersMW(c *Context) {
-	cr := c.Request.Header.Get("X-CR")
+	cr := c.GetHeader("X-CR")
 	if cr == "1" {
 		c.CR = true
 	} else {
