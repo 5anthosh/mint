@@ -65,20 +65,15 @@ func (mt *Mint) Set(key string, value interface{}) {
 	mutex.Unlock()
 }
 
-//Views registers more than one view to application
-func (mt *Mint) Views(vcs Views) *Mint {
-	for _, vc := range vcs {
-		mt.View(vc)
-	}
-	return mt
+func (mt *Mint) Handler(hc *HandlersContext) {
+	hc.mint = mt
+	mt.handlers = append(mt.handlers, hc)
 }
 
-//View registers a single view to application
-func (mt *Mint) View(vc ViewContext) *Mint {
-	handlerContext := newHandlerContext(mt)
-	handlerContext.Path(vc.path).Handlers(vc.handlers...).Methods(vc.methods...).Compressed(vc.compressed)
-	mt.handlers = append(mt.handlers, handlerContext)
-	return mt
+func (mt *Mint) Handlers(hsc []*HandlersContext) {
+	for _, handler := range hsc {
+		mt.Handler(handler)
+	}
 }
 
 //HandleStatic registers a new handler to handle static content such as img, css, html, js.
@@ -90,14 +85,24 @@ func (mt *Mint) HandleStatic(path string, dir string) {
 func (mt *Mint) buildViews() {
 
 	for _, handler := range mt.handlers {
+		handler.middleware = append(mt.defaultHandler, handler.middleware...)
 		handler.build(mt.router)
 	}
 	for _, handlerGroup := range mt.groupHandlers {
+		handlerGroup.middleware = append(mt.defaultHandler, handlerGroup.middleware...)
 		handlerGroup.build(mt.router)
 	}
 	if len(mt.staticPath) != 0 {
 		mt.router.PathPrefix(mt.staticPath).Handler(mt.staticHandler)
 	}
+}
+
+func (mt *Mint) Group(pathPrefix string) *HandlersGroup {
+	handlersGroup := &HandlersGroup{}
+	handlersGroup.mint = mt
+	handlersGroup.basePath = pathPrefix
+	mt.groupHandlers = append(mt.groupHandlers, handlersGroup)
+	return handlersGroup
 }
 
 //New creates new application
@@ -152,7 +157,7 @@ func (mt *Mint) POST(path string, handler Handler) *HandlersContext {
 func (mt *Mint) SimpleHandler(path string, method string, handler ...Handler) *HandlersContext {
 	hc := newHandlerContext(mt)
 	hc.Methods(method)
-	hc.Handlers(handler...)
+	hc.Handle(handler...)
 	hc.Path(path)
 	mt.handlers = append(mt.handlers, hc)
 	return hc

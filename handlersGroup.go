@@ -27,18 +27,20 @@ func (hg *HandlersGroup) build(parentRouter *mux.Router) {
 		Queries(hg.queries...).
 		Methods(hg.methods...)
 	for _, handler := range hg.handlers {
+		handler.middleware = append(hg.middleware, handler.middleware...)
 		handler.build(subrouter)
 	}
 	for _, group := range hg.handlersGroup {
+		group.middleware = append(hg.middleware, group.middleware...)
 		group.build(subrouter)
 	}
 }
 
 //Group creates new subgroup
-func (hg *HandlersGroup) Group() *HandlersGroup {
+func (hg *HandlersGroup) Group(pathPrefix string) *HandlersGroup {
 	handlersGroup := &HandlersGroup{}
+	handlersGroup.basePath = pathPrefix
 	handlersGroup.mint = hg.mint
-	handlersGroup.middleware = hg.middleware
 	hg.handlersGroup = append(hg.handlersGroup, handlersGroup)
 	return handlersGroup
 }
@@ -46,22 +48,6 @@ func (hg *HandlersGroup) Group() *HandlersGroup {
 //Use register new middleware
 func (hg *HandlersGroup) Use(handler ...Handler) {
 	hg.middleware = append(hg.middleware, handler...)
-}
-
-//View registers a single view to application
-func (hg *HandlersGroup) View(vc ViewContext) *HandlersGroup {
-	handlerContext := newHandlerContext(hg.mint)
-	handlerContext.Path(vc.path).Handlers(vc.handlers...).Methods(vc.methods...).Compressed(vc.compressed)
-	hg.handlers = append(hg.handlers, handlerContext)
-	return hg
-}
-
-//Views registers more than one view to application
-func (hg *HandlersGroup) Views(vcs Views) *HandlersGroup {
-	for _, vc := range vcs {
-		hg.View(vc)
-	}
-	return hg
 }
 
 //Schemes #
@@ -86,7 +72,7 @@ func (hg *HandlersGroup) Queries(queries ...string) *HandlersGroup {
 func (hg *HandlersGroup) SimpleHandler(path string, method string, handler ...Handler) *HandlersContext {
 	hc := newHandlerContext(hg.mint)
 	hc.Methods(method)
-	hc.Handlers(handler...)
+	hc.Handle(handler...)
 	hc.Path(path)
 	hg.handlers = append(hg.handlers, hc)
 	return hc

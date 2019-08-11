@@ -9,9 +9,12 @@ import (
 //Handler handles requests for an URL
 type Handler func(*Context)
 
+type Handlers []*HandlersContext
+
 //HandlersContext #
 type HandlersContext struct {
 	mint       *Mint
+	middleware []Handler
 	handlers   []Handler
 	methods    []string
 	schemes    []string
@@ -26,11 +29,12 @@ func newHandlerContext(mint *Mint) *HandlersContext {
 	handlerContext := &HandlersContext{
 		mint: mint,
 	}
-	handlerContext.Handlers(mint.defaultHandler...)
+	handlerContext.Handle(mint.defaultHandler...)
 	return handlerContext
 }
 
 func (hc *HandlersContext) build(router *mux.Router) {
+	hc.handlers = append(hc.middleware, hc.handlers...)
 	router.Handle(hc.path, hc).
 		Methods(hc.methods...).
 		Schemes(hc.schemes...).
@@ -44,9 +48,9 @@ func (hc *HandlersContext) Methods(methods ...string) *HandlersContext {
 	return hc
 }
 
-//Handlers #
-func (hc *HandlersContext) Handlers(handlers ...Handler) *HandlersContext {
-	hc.use(handlers...)
+//Handle #
+func (hc *HandlersContext) Handle(handlers ...Handler) *HandlersContext {
+	hc.handlers = append(hc.handlers, handlers...)
 	return hc
 }
 
@@ -94,6 +98,6 @@ func (hc *HandlersContext) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	hc.mint.contextPool.Put(c)
 }
 
-func (hc *HandlersContext) use(handler ...Handler) {
-	hc.handlers = append(hc.handlers, handler...)
+func (hc *HandlersContext) Use(handler ...Handler) {
+	hc.middleware = append(hc.middleware, handler...)
 }
