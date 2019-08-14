@@ -32,7 +32,6 @@ type Context struct {
 	status    int
 	size      int
 	Error     []error
-	CR        bool
 }
 
 func (app *Mint) newContext() *Context {
@@ -50,7 +49,6 @@ func (c *Context) Reset() {
 	c.size = 0
 	c.Error = c.Error[0:0]
 	c.index = 0
-	c.CR = false
 }
 func newContextPool(app *Mint) func() interface{} {
 	return func() interface{} {
@@ -127,7 +125,7 @@ func (c *Context) compressedJSON(code int, reponse interface{}) {
 func (c *Context) JSON(code int, response interface{}) {
 	c.SetHeader("Content-Type", []string{"application/json"})
 	if bodyAllowedForStatus(code) {
-		if c.CR {
+		if c.HandlersContext.compressed {
 			c.compressedJSON(code, response)
 		} else {
 			c.uncompressedJSON(code, response)

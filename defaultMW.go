@@ -21,13 +21,6 @@ func loggerMW(c *Context) {
 	log.Print()
 }
 
-//CustomHeaders parse the headers of request and set Corrosponding context value
-func customHeadersMW(c *Context) {
-	cr := c.GetHeader("X-CR")
-	if cr == "1" {
-		c.CR = true
-	} else {
-		c.CR = false
-	}
-	c.Next()
+func notFoundHandler(c *Context) {
+
 }
