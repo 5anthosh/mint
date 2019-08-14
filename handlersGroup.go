@@ -51,7 +51,7 @@ func (hg *HandlersGroup) Use(handler ...Handler) {
 }
 
 //Schemes #
-func (hg *HandlersGroup) Schemes(schemes ...string) *HandlersGroup {
+func (hg *HandlersGroup) Scheemes(schemes ...string) *HandlersGroup {
 	hg.schemes = append(hg.schemes, schemes...)
 	return hg
 }
