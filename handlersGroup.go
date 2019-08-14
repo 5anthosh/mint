@@ -77,3 +77,14 @@ func (hg *HandlersGroup) SimpleHandler(path string, method string, handler ...Ha
 	hg.handlers = append(hg.handlers, hc)
 	return hc
 }
+
+func (hg *HandlersGroup) Handler(hc *HandlersContext) {
+	hc.mint = hg.mint
+	hg.handlers = append(hg.handlers, hc)
+}
+
+func (hg *HandlersGroup) Handlers(hsc []*HandlersContext) {
+	for _, handler := range hsc {
+		hg.Handler(handler)
+	}
+}
