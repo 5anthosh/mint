@@ -36,11 +36,19 @@ func newHandlerContext(mint *Mint) *HandlersContext {
 func (hc *HandlersContext) build(router *mux.Router) {
 	hc.handlers = append(hc.middleware, hc.handlers...)
 	hc.count = len(hc.handlers)
-	router.Handle(hc.path, hc).
-		Methods(hc.methods...).
-		Schemes(hc.schemes...).
-		Headers(hc.headers...).
-		Queries(hc.queries...)
+	route := router.Handle(hc.path, hc)
+	if len(hc.methods) > 0 {
+		route.Methods(hc.methods...)
+	}
+	if len(hc.schemes) > 0 {
+		route.Schemes(hc.schemes...)
+	}
+	if len(hc.headers) > 0 {
+		route.Headers(hc.headers...)
+	}
+	if len(hc.queries) > 0 {
+		route.Queries(hc.queries...)
+	}
 }
 
 //Methods #
@@ -99,6 +107,7 @@ func (hc *HandlersContext) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	hc.mint.contextPool.Put(c)
 }
 
-func (hc *HandlersContext) Use(handler ...Handler) {
+func (hc *HandlersContext) Use(handler ...Handler) *HandlersContext {
 	hc.middleware = append(hc.middleware, handler...)
+	return hc
 }

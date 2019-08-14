@@ -79,7 +79,8 @@ func (mt *Mint) Handlers(hsc []*HandlersContext) {
 func (mt *Mint) NotFoundHandler(handler Handler) {
 	hc := newHandlerContext(mt)
 	hc.middleware = defaultHandler
-	hc.Handle(handler)
+	hc.Handle(append(hc.middleware, handler)...)
+	hc.count = len(defaultHandler) + 1
 	mt.router.NotFoundHandler = hc
 }
 

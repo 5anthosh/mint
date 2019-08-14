@@ -9,23 +9,13 @@ type HandlersGroup struct {
 	mint          *Mint
 	middleware    []Handler
 	basePath      string
-	host          string
-	schemes       []string
-	headers       []string
-	queries       []string
-	methods       []string
+	router        *mux.Router
 	handlersGroup []*HandlersGroup
 	handlers      []*HandlersContext
 }
 
 func (hg *HandlersGroup) build(parentRouter *mux.Router) {
 	subrouter := parentRouter.PathPrefix(hg.basePath).Subrouter()
-	subrouter.
-		Host(hg.host).
-		Schemes(hg.schemes...).
-		Headers(hg.headers...).
-		Queries(hg.queries...).
-		Methods(hg.methods...)
 	for _, handler := range hg.handlers {
 		handler.middleware = append(hg.middleware, handler.middleware...)
 		handler.build(subrouter)
@@ -46,25 +36,26 @@ func (hg *HandlersGroup) Group(pathPrefix string) *HandlersGroup {
 }
 
 //Use register new middleware
-func (hg *HandlersGroup) Use(handler ...Handler) {
+func (hg *HandlersGroup) Use(handler ...Handler) *HandlersGroup {
 	hg.middleware = append(hg.middleware, handler...)
+	return hg
 }
 
 //Schemes #
 func (hg *HandlersGroup) Scheemes(schemes ...string) *HandlersGroup {
-	hg.schemes = append(hg.schemes, schemes...)
+	hg.router.Schemes(schemes...)
 	return hg
 }
 
 //Headers #
 func (hg *HandlersGroup) Headers(headers ...string) *HandlersGroup {
-	hg.headers = append(hg.headers, headers...)
+	hg.router.Headers(headers...)
 	return hg
 }
 
 //Queries #
 func (hg *HandlersGroup) Queries(queries ...string) *HandlersGroup {
-	hg.queries = append(hg.queries, queries...)
+	hg.router.Queries(queries...)
 	return hg
 }
 
@@ -78,13 +69,15 @@ func (hg *HandlersGroup) SimpleHandler(path string, method string, handler ...Ha
 	return hc
 }
 
-func (hg *HandlersGroup) Handler(hc *HandlersContext) {
+func (hg *HandlersGroup) Handler(hc *HandlersContext) *HandlersGroup {
 	hc.mint = hg.mint
 	hg.handlers = append(hg.handlers, hc)
+	return hg
 }
 
-func (hg *HandlersGroup) Handlers(hsc []*HandlersContext) {
+func (hg *HandlersGroup) Handlers(hsc []*HandlersContext) *HandlersGroup {
 	for _, handler := range hsc {
 		hg.Handler(handler)
 	}
+	return hg
 }

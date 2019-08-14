@@ -1,6 +1,7 @@
 package mint
 
 import (
+	"net/http"
 	"time"
 )
 
@@ -22,5 +23,5 @@ func loggerMW(c *Context) {
 }
 
 func notFoundHandler(c *Context) {
-
+	c.Status(http.StatusNotFound)
 }

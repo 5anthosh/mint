@@ -185,7 +185,7 @@ func (c *Context) ClientIP() string {
 
 //Next runs the next handler
 func (c *Context) Next() {
-	if c.index+1 >= c.HandlersContext.count {
+	if c.index >= c.HandlersContext.count {
 		return
 	}
 	handle := c.HandlersContext.handlers[c.index]
