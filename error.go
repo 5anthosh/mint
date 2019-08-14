@@ -16,6 +16,10 @@ func (err Error) Error() string {
 
 //Traceable error stores error with context of error like function name
 func Traceable(err error) Error {
+	switch err.(type) {
+	case Error:
+		return err.(Error)
+	}
 	pc := make([]uintptr, 10) // at least 1 entry needed
 	runtime.Callers(2, pc)
 	f := runtime.FuncForPC(pc[0])
