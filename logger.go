@@ -84,7 +84,7 @@ func (l *Logger) Print() {
 	statusColor := l.getStatusCodeColor()
 	methodColor := l.getMethodColor()
 	resetColor := l.getResetColor()
-	fmt.Println(fmt.Sprintf("[Service] %v |%s %3d %s| %13v | %15s |%s %-7s %s| %s > %v Bytes %v",
+	fmt.Println(fmt.Sprintf("[Service] %v |%s %3d %s| %13v | %15s |%s %-7s %s| %s > %v Bytes",
 		l.TimeStamp.Format("2006/01/02 - 15:04:05"),
 		statusColor, l.StatusCode, resetColor,
 		l.Latency,
@@ -92,6 +92,14 @@ func (l *Logger) Print() {
 		methodColor, l.Method, resetColor,
 		l.Path,
 		l.BodySize,
-		l.Errors,
 	))
+	for _, err := range l.Errors {
+		switch err.(type) {
+		case Error:
+			err1 := err.(Error)
+			fmt.Println(fmt.Errorf("%s %s %v %s", err1.file, err1.funcName, err1.line, err1.error.Error()))
+		case error:
+			fmt.Println(fmt.Errorf("%s", err.Error()))
+		}
+	}
 }
