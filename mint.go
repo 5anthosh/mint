@@ -13,7 +13,7 @@ import (
 
 var (
 	mutex          sync.RWMutex
-	defaultHandler = []Handler{loggerMW, customHeadersMW}
+	defaultHandler = []Handler{loggerMW}
 )
 
 //JSON basic json type
@@ -76,6 +76,13 @@ func (mt *Mint) Handlers(hsc []*HandlersContext) {
 	}
 }
 
+func (mt *Mint) NotFoundHandler(handler Handler) {
+	hc := newHandlerContext(mt)
+	hc.middleware = defaultHandler
+	hc.Handle(handler)
+	mt.router.NotFoundHandler = hc
+}
+
 //HandleStatic registers a new handler to handle static content such as img, css, html, js.
 func (mt *Mint) HandleStatic(path string, dir string) {
 	mt.staticPath = path
@@ -109,6 +116,7 @@ func (mt *Mint) Group(pathPrefix string) *HandlersGroup {
 func New() *Mint {
 	mintEngine := Simple()
 	mintEngine.defaultHandler = defaultHandler
+	mintEngine.NotFoundHandler(notFoundHandler)
 	return mintEngine
 }
 
@@ -187,4 +195,9 @@ func (mt *Mint) Run(port string) {
 		fmt.Println("Stopping the server" + err.Error())
 	}
 
+}
+
+//Database connection intercase
+type Database interface {
+	Connection() *sql.DB
 }
