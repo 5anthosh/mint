@@ -21,6 +21,7 @@ var (
 
 //Context provides context for whole request/response cycle
 //It helps to pass variable from one middlware to another
+
 type Context struct {
 	*HandlersContext
 	Request   *http.Request
@@ -28,7 +29,7 @@ type Context struct {
 	Method    string
 	URLParams map[string]string
 	DB        *sql.DB
-	index     int8
+	index     int
 	status    int
 	size      int
 	Error     []error
@@ -184,6 +185,9 @@ func (c *Context) ClientIP() string {
 
 //Next runs the next handler
 func (c *Context) Next() {
+	if c.index+1 >= c.HandlersContext.count {
+		return
+	}
 	handle := c.HandlersContext.handlers[c.index]
 	c.index++
 	handle(c)

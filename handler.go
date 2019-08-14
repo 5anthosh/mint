@@ -16,6 +16,7 @@ type HandlersContext struct {
 	mint       *Mint
 	middleware []Handler
 	handlers   []Handler
+	count      int
 	methods    []string
 	schemes    []string
 	headers    []string
@@ -29,12 +30,12 @@ func newHandlerContext(mint *Mint) *HandlersContext {
 	handlerContext := &HandlersContext{
 		mint: mint,
 	}
-	handlerContext.Handle(mint.defaultHandler...)
 	return handlerContext
 }
 
 func (hc *HandlersContext) build(router *mux.Router) {
 	hc.handlers = append(hc.middleware, hc.handlers...)
+	hc.count = len(hc.handlers)
 	router.Handle(hc.path, hc).
 		Methods(hc.methods...).
 		Schemes(hc.schemes...).
