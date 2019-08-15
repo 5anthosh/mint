@@ -26,9 +26,31 @@ func (hg *HandlersGroup) build(parentRouter *mux.Router) {
 	}
 }
 
+//NewGroup creates new handlers Group
+func NewGroup(pathPrefix string) *HandlersGroup {
+	handlersGroup := new(HandlersGroup)
+	handlersGroup.basePath = pathPrefix
+	return handlersGroup
+}
+
+//AddGroup add new subgroup
+func (hg *HandlersGroup) AddGroup(newhg *HandlersGroup) *HandlersGroup {
+	newhg.mint = hg.mint
+	hg.handlersGroup = append(hg.handlersGroup, newhg)
+	return hg
+}
+
+//AddGroups adds new subgroups
+func (hg *HandlersGroup) AddGroups(hgs []*HandlersGroup) *HandlersGroup {
+	for _, nhg := range hgs {
+		hg.AddGroup(nhg)
+	}
+	return hg
+}
+
 //Group creates new subgroup
 func (hg *HandlersGroup) Group(pathPrefix string) *HandlersGroup {
-	handlersGroup := &HandlersGroup{}
+	handlersGroup := new(HandlersGroup)
 	handlersGroup.basePath = pathPrefix
 	handlersGroup.mint = hg.mint
 	hg.handlersGroup = append(hg.handlersGroup, handlersGroup)

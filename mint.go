@@ -105,12 +105,28 @@ func (mt *Mint) buildViews() {
 	}
 }
 
+//Group creates new group handlers W
 func (mt *Mint) Group(pathPrefix string) *HandlersGroup {
 	handlersGroup := &HandlersGroup{}
 	handlersGroup.mint = mt
 	handlersGroup.basePath = pathPrefix
 	mt.groupHandlers = append(mt.groupHandlers, handlersGroup)
 	return handlersGroup
+}
+
+//AddGroup adds a group to router
+func (mt *Mint) AddGroup(hg *HandlersGroup) *Mint {
+	hg.mint = mt
+	mt.groupHandlers = append(mt.groupHandlers, hg)
+	return mt
+}
+
+//AddGroups adds a groups of handlers
+func (mt *Mint) AddGroups(hgs []*HandlersGroup) *Mint {
+	for _, hg := range hgs {
+		mt.AddGroup(hg)
+	}
+	return mt
 }
 
 //New creates new application
@@ -196,6 +212,11 @@ func (mt *Mint) Run(port string) {
 		fmt.Println("Stopping the server" + err.Error())
 	}
 
+}
+
+//URLVar formats url var
+func URLVar(urlvar string) string {
+	return "{" + urlvar + "}"
 }
 
 //Database connection intercase
