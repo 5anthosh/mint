@@ -17,10 +17,12 @@ type HandlersGroup struct {
 func (hg *HandlersGroup) build(parentRouter *mux.Router) {
 	subrouter := parentRouter.PathPrefix(hg.basePath).Subrouter()
 	for _, handler := range hg.handlers {
+		handler.mint = hg.mint
 		handler.middleware = append(hg.middleware, handler.middleware...)
 		handler.build(subrouter)
 	}
 	for _, group := range hg.handlersGroup {
+		group.mint = hg.mint
 		group.middleware = append(hg.middleware, group.middleware...)
 		group.build(subrouter)
 	}
@@ -35,7 +37,6 @@ func NewGroup(pathPrefix string) *HandlersGroup {
 
 //AddGroup add new subgroup
 func (hg *HandlersGroup) AddGroup(newhg *HandlersGroup) *HandlersGroup {
-	newhg.mint = hg.mint
 	hg.handlersGroup = append(hg.handlersGroup, newhg)
 	return hg
 }
@@ -52,7 +53,6 @@ func (hg *HandlersGroup) AddGroups(hgs []*HandlersGroup) *HandlersGroup {
 func (hg *HandlersGroup) Group(pathPrefix string) *HandlersGroup {
 	handlersGroup := new(HandlersGroup)
 	handlersGroup.basePath = pathPrefix
-	handlersGroup.mint = hg.mint
 	hg.handlersGroup = append(hg.handlersGroup, handlersGroup)
 	return handlersGroup
 }
@@ -64,7 +64,7 @@ func (hg *HandlersGroup) Use(handler ...Handler) *HandlersGroup {
 }
 
 //Schemes #
-func (hg *HandlersGroup) Scheemes(schemes ...string) *HandlersGroup {
+func (hg *HandlersGroup) Schemes(schemes ...string) *HandlersGroup {
 	hg.router.Schemes(schemes...)
 	return hg
 }
@@ -83,7 +83,7 @@ func (hg *HandlersGroup) Queries(queries ...string) *HandlersGroup {
 
 //SimpleHandler registers simple handler
 func (hg *HandlersGroup) SimpleHandler(path string, method string, handler ...Handler) *HandlersContext {
-	hc := newHandlerContext(hg.mint)
+	hc := new(HandlersContext)
 	hc.Methods(method)
 	hc.Handle(handler...)
 	hc.Path(path)
@@ -91,12 +91,13 @@ func (hg *HandlersGroup) SimpleHandler(path string, method string, handler ...Ha
 	return hc
 }
 
+//Handler registers new Handler
 func (hg *HandlersGroup) Handler(hc *HandlersContext) *HandlersGroup {
-	hc.mint = hg.mint
 	hg.handlers = append(hg.handlers, hc)
 	return hg
 }
 
+//Handlers registers chain of handlers
 func (hg *HandlersGroup) Handlers(hsc []*HandlersContext) *HandlersGroup {
 	for _, handler := range hsc {
 		hg.Handler(handler)

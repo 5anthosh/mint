@@ -39,7 +39,7 @@ type Mint struct {
 
 //Path sets URL Path to handler
 func (mt *Mint) Path(path string) *HandlersContext {
-	handlerContext := newHandlerContext(mt)
+	handlerContext := new(HandlersContext)
 	mt.handlers = append(mt.handlers, handlerContext)
 	return handlerContext.Path(path)
 }
@@ -65,19 +65,20 @@ func (mt *Mint) Set(key string, value interface{}) {
 	mutex.Unlock()
 }
 
-func (mt *Mint) Handler(hc *HandlersContext) {
-	hc.mint = mt
+func (mt *Mint) Handler(hc *HandlersContext) *Mint {
 	mt.handlers = append(mt.handlers, hc)
+	return mt
 }
 
-func (mt *Mint) Handlers(hsc []*HandlersContext) {
+func (mt *Mint) Handlers(hsc []*HandlersContext) *Mint {
 	for _, handler := range hsc {
 		mt.Handler(handler)
 	}
+	return mt
 }
 
 func (mt *Mint) NotFoundHandler(handler Handler) {
-	hc := newHandlerContext(mt)
+	hc := new(HandlersContext)
 	hc.middleware = defaultHandler
 	hc.Handle(append(hc.middleware, handler)...)
 	hc.count = len(defaultHandler) + 1
@@ -93,10 +94,12 @@ func (mt *Mint) HandleStatic(path string, dir string) {
 func (mt *Mint) buildViews() {
 
 	for _, handler := range mt.handlers {
+		handler.mint = mt
 		handler.middleware = append(mt.defaultHandler, handler.middleware...)
 		handler.build(mt.router)
 	}
 	for _, handlerGroup := range mt.groupHandlers {
+		handlerGroup.mint = mt
 		handlerGroup.middleware = append(mt.defaultHandler, handlerGroup.middleware...)
 		handlerGroup.build(mt.router)
 	}
@@ -108,7 +111,6 @@ func (mt *Mint) buildViews() {
 //Group creates new group handlers W
 func (mt *Mint) Group(pathPrefix string) *HandlersGroup {
 	handlersGroup := &HandlersGroup{}
-	handlersGroup.mint = mt
 	handlersGroup.basePath = pathPrefix
 	mt.groupHandlers = append(mt.groupHandlers, handlersGroup)
 	return handlersGroup
@@ -116,7 +118,6 @@ func (mt *Mint) Group(pathPrefix string) *HandlersGroup {
 
 //AddGroup adds a group to router
 func (mt *Mint) AddGroup(hg *HandlersGroup) *Mint {
-	hg.mint = mt
 	mt.groupHandlers = append(mt.groupHandlers, hg)
 	return mt
 }
@@ -180,7 +181,7 @@ func (mt *Mint) POST(path string, handler Handler) *HandlersContext {
 
 //SimpleHandler registers simple handler
 func (mt *Mint) SimpleHandler(path string, method string, handler ...Handler) *HandlersContext {
-	hc := newHandlerContext(mt)
+	hc := new(HandlersContext)
 	hc.Methods(method)
 	hc.Handle(handler...)
 	hc.Path(path)

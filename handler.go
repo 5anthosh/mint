@@ -25,14 +25,6 @@ type HandlersContext struct {
 	compressed bool
 }
 
-//newHandlerContext creates new app handler
-func newHandlerContext(mint *Mint) *HandlersContext {
-	handlerContext := &HandlersContext{
-		mint: mint,
-	}
-	return handlerContext
-}
-
 func (hc *HandlersContext) build(router *mux.Router) {
 	hc.handlers = append(hc.middleware, hc.handlers...)
 	hc.count = len(hc.handlers)
