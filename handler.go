@@ -22,6 +22,7 @@ type HandlersContext struct {
 	headers    []string
 	queries    []string
 	path       string
+	name       string
 	compressed bool
 }
 
@@ -40,6 +41,9 @@ func (hc *HandlersContext) build(router *mux.Router) {
 	}
 	if len(hc.queries) > 0 {
 		route.Queries(hc.queries...)
+	}
+	if len(hc.name) > 0 {
+		route.Name(hc.name)
 	}
 }
 
@@ -76,6 +80,12 @@ func (hc *HandlersContext) Queries(queries ...string) *HandlersContext {
 //Path #
 func (hc *HandlersContext) Path(path string) *HandlersContext {
 	hc.path = path
+	return hc
+}
+
+//Name #
+func (hc *HandlersContext) Name(name string) *HandlersContext {
+	hc.name = name
 	return hc
 }
 

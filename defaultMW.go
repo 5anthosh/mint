@@ -25,3 +25,7 @@ func loggerMW(c *Context) {
 func notFoundHandler(c *Context) {
 	c.Status(http.StatusNotFound)
 }
+
+func methodNotAllowedHandler(c *Context) {
+	c.Status(http.StatusMethodNotAllowed)
+}

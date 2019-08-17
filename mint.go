@@ -35,6 +35,7 @@ type Mint struct {
 	gzipWriterPool *sync.Pool
 	DB             *sql.DB
 	built          bool
+	strictSlash    bool
 }
 
 //Path sets URL Path to handler
@@ -47,6 +48,11 @@ func (mt *Mint) Path(path string) *HandlersContext {
 //RegisterDB sets db connection
 func (mt *Mint) RegisterDB(db Database) *Mint {
 	mt.DB = db.Connection()
+	return mt
+}
+
+func (mt *Mint) StrictSlash(strictSlash bool) *Mint {
+	mt.strictSlash = strictSlash
 	return mt
 }
 
@@ -86,14 +92,36 @@ func (mt *Mint) NotFoundHandler(handler Handler) {
 	mt.router.NotFoundHandler = hc
 }
 
+func (mt *Mint) MethodNotAllowedHandler(handler Handler) {
+	hc := new(HandlersContext)
+	hc.middleware = defaultHandler
+	hc.mint = mt
+	hc.Handle(append(hc.middleware, handler)...)
+	hc.count = len(defaultHandler) + 1
+	mt.router.MethodNotAllowedHandler = hc
+}
+
 //HandleStatic registers a new handler to handle static content such as img, css, html, js.
 func (mt *Mint) HandleStatic(path string, dir string) {
 	mt.staticPath = path
 	mt.staticHandler = http.FileServer(http.Dir(dir))
 }
 
-func (mt *Mint) buildViews() {
+func (mt *Mint) ChainGroups(groups []*HandlersGroup) *Mint {
+	count := len(groups)
+	if count > 0 {
+		parentGroup := groups[0]
+		mt.AddGroup(parentGroup)
+		for iter := 1; iter < count; iter++ {
+			parentGroup.AddGroup(groups[iter])
+			parentGroup = groups[iter]
+		}
+	}
+	return mt
+}
 
+func (mt *Mint) buildViews() {
+	mt.router.StrictSlash(mt.strictSlash)
 	for _, handler := range mt.handlers {
 		handler.mint = mt
 		handler.middleware = append(mt.defaultHandler, handler.middleware...)
@@ -136,6 +164,7 @@ func New() *Mint {
 	mintEngine := Simple()
 	mintEngine.defaultHandler = defaultHandler
 	mintEngine.NotFoundHandler(notFoundHandler)
+	mintEngine.MethodNotAllowedHandler(methodNotAllowedHandler)
 	return mintEngine
 }
 

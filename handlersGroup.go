@@ -49,6 +49,19 @@ func (hg *HandlersGroup) AddGroups(hgs []*HandlersGroup) *HandlersGroup {
 	return hg
 }
 
+func (hg *HandlersGroup) ChainGroups(groups []*HandlersGroup) *HandlersGroup {
+	count := len(groups)
+	if count > 0 {
+		parentGroup := groups[0]
+		hg.AddGroup(parentGroup)
+		for iter := 1; iter < count; iter++ {
+			parentGroup.AddGroup(groups[iter])
+			parentGroup = groups[iter]
+		}
+	}
+	return hg
+}
+
 //Group creates new subgroup
 func (hg *HandlersGroup) Group(pathPrefix string) *HandlersGroup {
 	handlersGroup := new(HandlersGroup)
