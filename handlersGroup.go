@@ -9,13 +9,20 @@ type HandlersGroup struct {
 	mint          *Mint
 	middleware    []Handler
 	basePath      string
+	prefixHandler *HandlersContext
 	router        *mux.Router
 	handlersGroup []*HandlersGroup
 	handlers      []*HandlersContext
 }
 
 func (hg *HandlersGroup) build(parentRouter *mux.Router) {
-	subrouter := parentRouter.PathPrefix(hg.basePath).Subrouter()
+	route := parentRouter.PathPrefix(hg.basePath)
+	if hg.prefixHandler != nil {
+		hg.prefixHandler.mint = hg.mint
+		hg.prefixHandler.middleware = append(hg.middleware, hg.prefixHandler.middleware...)
+		hg.prefixHandler.buildWithRoute(route)
+	}
+	subrouter := route.Subrouter()
 	for _, handler := range hg.handlers {
 		handler.mint = hg.mint
 		handler.middleware = append(hg.middleware, handler.middleware...)
@@ -26,6 +33,11 @@ func (hg *HandlersGroup) build(parentRouter *mux.Router) {
 		group.middleware = append(hg.middleware, group.middleware...)
 		group.build(subrouter)
 	}
+}
+
+func (hg *HandlersGroup) PrefixHandler(hc *HandlersContext) *HandlersGroup {
+	hg.prefixHandler = hc
+	return hg
 }
 
 //NewGroup creates new handlers Group

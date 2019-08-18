@@ -30,6 +30,10 @@ func (hc *HandlersContext) build(router *mux.Router) {
 	hc.handlers = append(hc.middleware, hc.handlers...)
 	hc.count = len(hc.handlers)
 	route := router.Handle(hc.path, hc)
+	addFilters(hc, route)
+}
+
+func addFilters(hc *HandlersContext, route *mux.Route) {
 	if len(hc.methods) > 0 {
 		route.Methods(hc.methods...)
 	}
@@ -45,6 +49,12 @@ func (hc *HandlersContext) build(router *mux.Router) {
 	if len(hc.name) > 0 {
 		route.Name(hc.name)
 	}
+}
+func (hc *HandlersContext) buildWithRoute(route *mux.Route) {
+	hc.handlers = append(hc.middleware, hc.handlers...)
+	hc.count = len(hc.handlers)
+	route1 := route.Handler(hc)
+	addFilters(hc, route1)
 }
 
 //Methods #
