@@ -21,23 +21,23 @@ func (hg *HandlersGroup) build(parentRouter *mux.Router) {
 		hg.prefixHandler.mint = hg.mint
 		hg.prefixHandler.middleware = append(hg.middleware, hg.prefixHandler.middleware...)
 		hg.prefixHandler.buildWithRoute(route)
-	}
-	subrouter := route.Subrouter()
-	for _, handler := range hg.handlers {
-		handler.mint = hg.mint
-		handler.middleware = append(hg.middleware, handler.middleware...)
-		handler.build(subrouter)
-	}
-	for _, group := range hg.handlersGroup {
-		group.mint = hg.mint
-		group.middleware = append(hg.middleware, group.middleware...)
-		group.build(subrouter)
+	} else {
+		subrouter := route.Subrouter()
+		for _, handler := range hg.handlers {
+			handler.mint = hg.mint
+			handler.middleware = append(hg.middleware, handler.middleware...)
+			handler.build(subrouter)
+		}
+		for _, group := range hg.handlersGroup {
+			group.mint = hg.mint
+			group.middleware = append(hg.middleware, group.middleware...)
+			group.build(subrouter)
+		}
 	}
 }
 
-func (hg *HandlersGroup) PrefixHandler(hc *HandlersContext) *HandlersGroup {
+func (hg *HandlersGroup) PrefixHandler(hc *HandlersContext) {
 	hg.prefixHandler = hc
-	return hg
 }
 
 //NewGroup creates new handlers Group
