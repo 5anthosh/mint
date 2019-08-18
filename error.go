@@ -16,6 +16,10 @@ func (err Error) Error() string {
 
 //Traceable error stores error with context of error like function name
 func Traceable(err error) Error {
+	var errObj Error
+	if err == nil {
+		return errObj
+	}
 	switch err.(type) {
 	case Error:
 		return err.(Error)
@@ -24,10 +28,11 @@ func Traceable(err error) Error {
 	runtime.Callers(2, pc)
 	f := runtime.FuncForPC(pc[0])
 	file, line := f.FileLine(pc[0])
-	return Error{
+	errObj = Error{
 		error:    err,
 		file:     file,
 		line:     line,
 		funcName: f.Name(),
 	}
+	return errObj
 }
