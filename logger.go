@@ -94,12 +94,7 @@ func (l *Logger) Print() {
 		l.BodySize,
 	))
 	for _, err := range l.Errors {
-		switch err.(type) {
-		case Error:
-			err1 := err.(Error)
-			fmt.Println(fmt.Errorf("%s %s %v %s", err1.file, err1.funcName, err1.line, err1.error.Error()))
-		case error:
+
 			fmt.Println(fmt.Errorf("%s", err.Error()))
-		}
 	}
 }
