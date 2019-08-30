@@ -18,7 +18,7 @@ func loggerMW(c *Context) {
 	log.ClientIP = c.ClientIP()
 	log.BodySize = c.size
 	log.Path = path
-	log.Errors = c.Error
+	log.Errors = c.errors
 	log.Print()
 }
 

@@ -32,7 +32,7 @@ type Context struct {
 	index     int
 	status    int
 	size      int
-	Error     []error
+	errors    []error
 }
 
 func (app *Mint) newContext() *Context {
@@ -48,7 +48,7 @@ func (c *Context) Reset() {
 	c.Response = nil
 	c.status = 0
 	c.size = 0
-	c.Error = c.Error[0:0]
+	c.errors = c.errors[0:0]
 	c.index = 0
 }
 func newContextPool(app *Mint) func() interface{} {
@@ -106,17 +106,17 @@ func (c *Context) compressedJSON(code int, reponse interface{}) {
 	gz.Reset(c.Response)
 	jsonContentByte, err := json.Marshal(reponse)
 	if err != nil {
-		c.AppendError(err)
+		c.Errors(err)
 	}
 	size, err := gz.Write(jsonContentByte)
 	if err != nil {
-		c.AppendError(err)
+		c.Errors(err)
 	}
 	c.setSize(size)
 	size, err = gz.Write(newLine)
 	c.setSize(size)
 	if err != nil {
-		c.AppendError(err)
+		c.Errors(err)
 	}
 	gz.Close()
 	c.mint.gzipWriterPool.Put(gz)
@@ -141,17 +141,17 @@ func (c *Context) uncompressedJSON(code int, reponse interface{}) {
 	c.Status(code)
 	jsonContentByte, err := json.Marshal(reponse)
 	if err != nil {
-		c.AppendError(err)
+		c.Errors(err)
 	}
 	size, err := c.Response.Write(jsonContentByte)
 	if err != nil {
-		c.AppendError(err)
+		c.Errors(err)
 	}
 	c.setSize(size)
 	size, err = c.Response.Write(newLine)
 	c.setSize(size)
 	if err != nil {
-		c.AppendError(err)
+		c.Errors(err)
 	}
 
 }
@@ -160,10 +160,16 @@ func (c *Context) setSize(size int) {
 	c.size += size
 }
 
-//AppendError records error to be displayed later
-func (c *Context) AppendError(err ...error) {
+//Errors records error to be displayed later
+func (c *Context) Errors(err ...error) {
+	for _, er := range err {
+		c.Error(er)
+	}
+}
+
+func (c *Context) Error(err error) {
 	if err != nil {
-		c.Error = append(c.Error, err...)
+		c.errors = append(c.errors, err)
 	}
 }
 
