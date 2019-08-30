@@ -25,17 +25,19 @@ type Mint struct {
 	// defaultHandler is default middleware like logger, Custom Headers
 	defaultHandler []Handler
 	//handlers contains HandlersContext information
-	handlers       []*HandlersContext
-	groupHandlers  []*HandlersGroup
-	store          map[string]interface{}
-	staticPath     string
-	staticHandler  http.Handler
-	router         *mux.Router
-	contextPool    *sync.Pool
-	gzipWriterPool *sync.Pool
-	DB             *sql.DB
-	built          bool
-	strictSlash    bool
+	handlers         []*HandlersContext
+	groupHandlers    []*HandlersGroup
+	store            map[string]interface{}
+	staticPath       string
+	staticHandler    http.Handler
+	router           *mux.Router
+	contextPool      *sync.Pool
+	gzipWriterPool   *sync.Pool
+	DB               *sql.DB
+	built            bool
+	strictSlash      bool
+	notFoundHandler  *HandlersContext
+	methodNotAllowed *HandlersContext
 }
 
 //Path sets URL Path to handler
@@ -51,6 +53,7 @@ func (mt *Mint) RegisterDB(db Database) *Mint {
 	return mt
 }
 
+//StrictSlash enable strictslash in router
 func (mt *Mint) StrictSlash(strictSlash bool) *Mint {
 	mt.strictSlash = strictSlash
 	return mt
@@ -71,11 +74,13 @@ func (mt *Mint) Set(key string, value interface{}) {
 	mutex.Unlock()
 }
 
+//Handler registers single handlers context
 func (mt *Mint) Handler(hc *HandlersContext) *Mint {
 	mt.handlers = append(mt.handlers, hc)
 	return mt
 }
 
+//Handlers registers multiple handlers context
 func (mt *Mint) Handlers(hsc []*HandlersContext) *Mint {
 	for _, handler := range hsc {
 		mt.Handler(handler)
@@ -83,22 +88,16 @@ func (mt *Mint) Handlers(hsc []*HandlersContext) *Mint {
 	return mt
 }
 
-func (mt *Mint) NotFoundHandler(handler Handler) {
-	hc := new(HandlersContext)
-	hc.middleware = defaultHandler
+//NotFoundHandler registers not found handler context
+func (mt *Mint) NotFoundHandler(hc *HandlersContext) {
 	hc.mint = mt
-	hc.Handle(append(hc.middleware, handler)...)
-	hc.count = len(defaultHandler) + 1
-	mt.router.NotFoundHandler = hc
+	mt.notFoundHandler = hc
 }
 
-func (mt *Mint) MethodNotAllowedHandler(handler Handler) {
-	hc := new(HandlersContext)
-	hc.middleware = defaultHandler
+//MethodNotAllowedHandler registers method not allowed handler
+func (mt *Mint) MethodNotAllowedHandler(hc *HandlersContext) {
 	hc.mint = mt
-	hc.Handle(append(hc.middleware, handler)...)
-	hc.count = len(defaultHandler) + 1
-	mt.router.MethodNotAllowedHandler = hc
+	mt.methodNotAllowed = hc
 }
 
 //HandleStatic registers a new handler to handle static content such as img, css, html, js.
@@ -107,6 +106,7 @@ func (mt *Mint) HandleStatic(path string, dir string) {
 	mt.staticHandler = http.FileServer(http.Dir(dir))
 }
 
+//ChainGroups chains groups in linear
 func (mt *Mint) ChainGroups(groups []*HandlersGroup) *Mint {
 	count := len(groups)
 	if count > 0 {
@@ -122,6 +122,7 @@ func (mt *Mint) ChainGroups(groups []*HandlersGroup) *Mint {
 
 func (mt *Mint) buildViews() {
 	mt.router.StrictSlash(mt.strictSlash)
+	mt.buildOtherHandlers()
 	for _, handler := range mt.handlers {
 		handler.mint = mt
 		handler.middleware = append(mt.defaultHandler, handler.middleware...)
@@ -135,6 +136,20 @@ func (mt *Mint) buildViews() {
 	if len(mt.staticPath) != 0 {
 		mt.router.PathPrefix(mt.staticPath).Handler(mt.staticHandler)
 	}
+}
+
+func (mt *Mint) buildOtherHandlers() {
+	handlers := append(mt.defaultHandler, mt.notFoundHandler.middleware...)
+	handlers = append(handlers, mt.notFoundHandler.handlers...)
+	mt.notFoundHandler.count = len(handlers)
+	mt.notFoundHandler.handlers = handlers
+	mt.router.NotFoundHandler = mt.notFoundHandler
+
+	handlers = append(mt.defaultHandler, mt.methodNotAllowed.middleware...)
+	handlers = append(handlers, mt.methodNotAllowed.handlers...)
+	mt.methodNotAllowed.count = len(handlers)
+	mt.notFoundHandler.handlers = handlers
+	mt.router.MethodNotAllowedHandler = mt.methodNotAllowed
 }
 
 //Group creates new group handlers W
@@ -163,8 +178,8 @@ func (mt *Mint) AddGroups(hgs []*HandlersGroup) *Mint {
 func New() *Mint {
 	mintEngine := Simple()
 	mintEngine.defaultHandler = defaultHandler
-	mintEngine.NotFoundHandler(notFoundHandler)
-	mintEngine.MethodNotAllowedHandler(methodNotAllowedHandler)
+	mintEngine.NotFoundHandler(new(HandlersContext).Handle(notFoundHandler))
+	mintEngine.MethodNotAllowedHandler(new(HandlersContext).Handle(methodNotAllowedHandler))
 	return mintEngine
 }
 
@@ -197,6 +212,12 @@ func Simple() *Mint {
 	mintEngine.router = NewRouter()
 	mintEngine.built = false
 	return mintEngine
+}
+
+//From registers router to mt
+func From(r Router, mt *Mint) *Mint {
+	mt.router = r
+	return mt
 }
 
 //GET register get handler

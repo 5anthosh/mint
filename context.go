@@ -21,7 +21,6 @@ var (
 
 //Context provides context for whole request/response cycle
 //It helps to pass variable from one middlware to another
-
 type Context struct {
 	*HandlersContext
 	Request   *http.Request

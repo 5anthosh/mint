@@ -9,6 +9,7 @@ import (
 //Handler handles requests for an URL
 type Handler func(*Context)
 
+//Handlers chain of Handler
 type Handlers []*HandlersContext
 
 //HandlersContext #
@@ -119,6 +120,7 @@ func (hc *HandlersContext) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	hc.mint.contextPool.Put(c)
 }
 
+//Use registers middleware
 func (hc *HandlersContext) Use(handler ...Handler) *HandlersContext {
 	hc.middleware = append(hc.middleware, handler...)
 	return hc

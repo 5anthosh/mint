@@ -23,9 +23,19 @@ func loggerMW(c *Context) {
 }
 
 func notFoundHandler(c *Context) {
-	c.Status(http.StatusNotFound)
+	rootResponse := make(map[string]interface{})
+	errResponse := make(map[string]interface{})
+	errResponse["code"] = http.StatusNotFound
+	errResponse["message"] = "Resource not found"
+	rootResponse["error"] = errResponse
+	c.JSON(http.StatusNotFound, rootResponse)
 }
 
 func methodNotAllowedHandler(c *Context) {
-	c.Status(http.StatusMethodNotAllowed)
+	rootResponse := make(map[string]interface{})
+	errResponse := make(map[string]interface{})
+	errResponse["code"] = http.StatusMethodNotAllowed
+	errResponse["message"] = "Method not allowed"
+	rootResponse["error"] = errResponse
+	c.JSON(http.StatusMethodNotAllowed, rootResponse)
 }

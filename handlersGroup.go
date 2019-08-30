@@ -36,6 +36,7 @@ func (hg *HandlersGroup) build(parentRouter *mux.Router) {
 	}
 }
 
+//PrefixHandler registers handler for prefix request
 func (hg *HandlersGroup) PrefixHandler(hc *HandlersContext) {
 	hg.prefixHandler = hc
 }
@@ -61,6 +62,7 @@ func (hg *HandlersGroup) AddGroups(hgs []*HandlersGroup) *HandlersGroup {
 	return hg
 }
 
+//ChainGroups chains groups in linear
 func (hg *HandlersGroup) ChainGroups(groups []*HandlersGroup) *HandlersGroup {
 	count := len(groups)
 	if count > 0 {
