@@ -9,10 +9,10 @@ type HandlersGroup struct {
 	mint          *Mint
 	middleware    []Handler
 	basePath      string
-	prefixHandler *HandlersContext
+	prefixHandler *HandlerBuilder
 	router        *mux.Router
 	handlersGroup []*HandlersGroup
-	handlers      []*HandlersContext
+	handlers      []*HandlerBuilder
 }
 
 func (hg *HandlersGroup) build(parentRouter *mux.Router) {
@@ -21,23 +21,23 @@ func (hg *HandlersGroup) build(parentRouter *mux.Router) {
 		hg.prefixHandler.mint = hg.mint
 		hg.prefixHandler.middleware = append(hg.middleware, hg.prefixHandler.middleware...)
 		hg.prefixHandler.buildWithRoute(route)
-	} else {
-		subrouter := route.Subrouter()
-		for _, handler := range hg.handlers {
-			handler.mint = hg.mint
-			handler.middleware = append(hg.middleware, handler.middleware...)
-			handler.build(subrouter)
-		}
-		for _, group := range hg.handlersGroup {
-			group.mint = hg.mint
-			group.middleware = append(hg.middleware, group.middleware...)
-			group.build(subrouter)
-		}
+		return
+	}
+	subrouter := route.Subrouter()
+	for _, handler := range hg.handlers {
+		handler.mint = hg.mint
+		handler.middleware = append(hg.middleware, handler.middleware...)
+		handler.build(subrouter)
+	}
+	for _, group := range hg.handlersGroup {
+		group.mint = hg.mint
+		group.middleware = append(hg.middleware, group.middleware...)
+		group.build(subrouter)
 	}
 }
 
 //PrefixHandler registers handler for prefix request
-func (hg *HandlersGroup) PrefixHandler(hc *HandlersContext) {
+func (hg *HandlersGroup) PrefixHandler(hc *HandlerBuilder) {
 	hg.prefixHandler = hc
 }
 
@@ -109,8 +109,8 @@ func (hg *HandlersGroup) Queries(queries ...string) *HandlersGroup {
 }
 
 //SimpleHandler registers simple handler
-func (hg *HandlersGroup) SimpleHandler(path string, method string, handler ...Handler) *HandlersContext {
-	hc := new(HandlersContext)
+func (hg *HandlersGroup) SimpleHandler(path string, method string, handler ...Handler) *HandlerBuilder {
+	hc := new(HandlerBuilder)
 	hc.Methods(method)
 	hc.Handle(handler...)
 	hc.Path(path)
@@ -119,13 +119,13 @@ func (hg *HandlersGroup) SimpleHandler(path string, method string, handler ...Ha
 }
 
 //Handler registers new Handler
-func (hg *HandlersGroup) Handler(hc *HandlersContext) *HandlersGroup {
+func (hg *HandlersGroup) Handler(hc *HandlerBuilder) *HandlersGroup {
 	hg.handlers = append(hg.handlers, hc)
 	return hg
 }
 
 //Handlers registers chain of handlers
-func (hg *HandlersGroup) Handlers(hsc []*HandlersContext) *HandlersGroup {
+func (hg *HandlersGroup) Handlers(hsc []*HandlerBuilder) *HandlersGroup {
 	for _, handler := range hsc {
 		hg.Handler(handler)
 	}

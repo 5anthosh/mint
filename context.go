@@ -3,7 +3,6 @@ package mint
 import (
 	"compress/gzip"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"net"
 	"net/http"
@@ -22,12 +21,11 @@ var (
 //Context provides context for whole request/response cycle
 //It helps to pass variable from one middlware to another
 type Context struct {
-	*HandlersContext
+	*HandlerBuilder
 	Request   *http.Request
 	Response  http.ResponseWriter
 	Method    string
 	URLParams map[string]string
-	DB        *sql.DB
 	index     int
 	status    int
 	size      int
@@ -35,14 +33,12 @@ type Context struct {
 }
 
 func (app *Mint) newContext() *Context {
-	return &Context{
-		DB: app.DB,
-	}
+	return new(Context)
 }
 
 //Reset resets the value the context
 func (c *Context) Reset() {
-	c.HandlersContext = nil
+	c.HandlerBuilder = nil
 	c.Request = nil
 	c.Response = nil
 	c.status = 0
@@ -125,7 +121,7 @@ func (c *Context) compressedJSON(code int, reponse interface{}) {
 func (c *Context) JSON(code int, response interface{}) {
 	c.SetHeader("Content-Type", []string{"application/json"})
 	if bodyAllowedForStatus(code) {
-		if c.HandlersContext.compressed {
+		if c.HandlerBuilder.compressed {
 			c.compressedJSON(code, response)
 		} else {
 			c.uncompressedJSON(code, response)
@@ -190,10 +186,10 @@ func (c *Context) ClientIP() string {
 
 //Next runs the next handler
 func (c *Context) Next() {
-	if c.index >= c.HandlersContext.count {
+	if c.index >= c.HandlerBuilder.count {
 		return
 	}
-	handle := c.HandlersContext.handlers[c.index]
+	handle := c.HandlerBuilder.handlers[c.index]
 	c.index++
 	handle(c)
 }
@@ -216,7 +212,7 @@ func (c *Context) Set(key, val interface{}) {
 	c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), key, val))
 }
 
-// Path gets request uri
-func (c *Context) Path() string {
+// URI gets request uri
+func (c *Context) URI() string {
 	return c.Request.RequestURI
 }

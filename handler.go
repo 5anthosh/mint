@@ -10,10 +10,10 @@ import (
 type Handler func(*Context)
 
 //Handlers chain of Handler
-type Handlers []*HandlersContext
+type Handlers []*HandlerBuilder
 
-//HandlersContext #
-type HandlersContext struct {
+//HandlerBuilder #
+type HandlerBuilder struct {
 	mint       *Mint
 	middleware []Handler
 	handlers   []Handler
@@ -27,14 +27,14 @@ type HandlersContext struct {
 	compressed bool
 }
 
-func (hc *HandlersContext) build(router *mux.Router) {
+func (hc *HandlerBuilder) build(router *mux.Router) {
 	hc.handlers = append(hc.middleware, hc.handlers...)
 	hc.count = len(hc.handlers)
 	route := router.Handle(hc.path, hc)
 	addFilters(hc, route)
 }
 
-func addFilters(hc *HandlersContext, route *mux.Route) {
+func addFilters(hc *HandlerBuilder, route *mux.Route) {
 	if len(hc.methods) > 0 {
 		route.Methods(hc.methods...)
 	}
@@ -51,7 +51,7 @@ func addFilters(hc *HandlersContext, route *mux.Route) {
 		route.Name(hc.name)
 	}
 }
-func (hc *HandlersContext) buildWithRoute(route *mux.Route) {
+func (hc *HandlerBuilder) buildWithRoute(route *mux.Route) {
 	hc.handlers = append(hc.middleware, hc.handlers...)
 	hc.count = len(hc.handlers)
 	route1 := route.Handler(hc)
@@ -59,69 +59,68 @@ func (hc *HandlersContext) buildWithRoute(route *mux.Route) {
 }
 
 //Methods #
-func (hc *HandlersContext) Methods(methods ...string) *HandlersContext {
+func (hc *HandlerBuilder) Methods(methods ...string) *HandlerBuilder {
 	hc.methods = append(hc.methods, methods...)
 	return hc
 }
 
 //Handle #
-func (hc *HandlersContext) Handle(handlers ...Handler) *HandlersContext {
+func (hc *HandlerBuilder) Handle(handlers ...Handler) *HandlerBuilder {
 	hc.handlers = append(hc.handlers, handlers...)
 	return hc
 }
 
 //Schemes #
-func (hc *HandlersContext) Schemes(schemes ...string) *HandlersContext {
+func (hc *HandlerBuilder) Schemes(schemes ...string) *HandlerBuilder {
 	hc.schemes = append(hc.schemes, schemes...)
 	return hc
 }
 
 //Headers #
-func (hc *HandlersContext) Headers(headers ...string) *HandlersContext {
+func (hc *HandlerBuilder) Headers(headers ...string) *HandlerBuilder {
 	hc.headers = append(hc.headers, headers...)
 	return hc
 }
 
 //Queries #
-func (hc *HandlersContext) Queries(queries ...string) *HandlersContext {
+func (hc *HandlerBuilder) Queries(queries ...string) *HandlerBuilder {
 	hc.queries = append(hc.queries, queries...)
 	return hc
 }
 
 //Path #
-func (hc *HandlersContext) Path(path string) *HandlersContext {
+func (hc *HandlerBuilder) Path(path string) *HandlerBuilder {
 	hc.path = path
 	return hc
 }
 
 //Name #
-func (hc *HandlersContext) Name(name string) *HandlersContext {
+func (hc *HandlerBuilder) Name(name string) *HandlerBuilder {
 	hc.name = name
 	return hc
 }
 
 //Compressed #
-func (hc *HandlersContext) Compressed(isCompressed bool) *HandlersContext {
+func (hc *HandlerBuilder) Compressed(isCompressed bool) *HandlerBuilder {
 	hc.compressed = isCompressed
 	return hc
 }
 
 //ServeHTTP #
-func (hc *HandlersContext) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (hc *HandlerBuilder) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	c := hc.mint.contextPool.Get().(*Context)
 	c.Reset()
-	c.HandlersContext = hc
+	c.HandlerBuilder = hc
 	c.URLParams = mux.Vars(req)
 	c.Request = req
 	c.Method = req.Method
 	c.Response = w
-	c.DB = hc.mint.DB
 	c.Next()
 	hc.mint.contextPool.Put(c)
 }
 
 //Use registers middleware
-func (hc *HandlersContext) Use(handler ...Handler) *HandlersContext {
+func (hc *HandlerBuilder) Use(handler ...Handler) *HandlerBuilder {
 	hc.middleware = append(hc.middleware, handler...)
 	return hc
 }
