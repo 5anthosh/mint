@@ -10,13 +10,14 @@ import (
 type Handler func(*Context)
 
 //Handlers chain of Handler
-type Handlers []*HandlerBuilder
+type Handlers []*HandlerContext
 
-//HandlerBuilder #
-type HandlerBuilder struct {
+//HandlerContext #
+type HandlerContext struct {
 	mint       *Mint
 	middleware []Handler
 	handlers   []Handler
+	validator  Handler
 	count      int
 	methods    []string
 	schemes    []string
@@ -27,14 +28,22 @@ type HandlerBuilder struct {
 	compressed bool
 }
 
-func (hc *HandlerBuilder) build(router *mux.Router) {
+//HandlerBuilder new handerContext
+func HandlerBuilder() *HandlerContext {
+	return new(HandlerContext)
+}
+
+func (hc *HandlerContext) build(router *mux.Router) {
+	if hc == nil {
+		return
+	}
 	hc.handlers = append(hc.middleware, hc.handlers...)
 	hc.count = len(hc.handlers)
 	route := router.Handle(hc.path, hc)
 	addFilters(hc, route)
 }
 
-func addFilters(hc *HandlerBuilder, route *mux.Route) {
+func addFilters(hc *HandlerContext, route *mux.Route) {
 	if len(hc.methods) > 0 {
 		route.Methods(hc.methods...)
 	}
@@ -51,7 +60,10 @@ func addFilters(hc *HandlerBuilder, route *mux.Route) {
 		route.Name(hc.name)
 	}
 }
-func (hc *HandlerBuilder) buildWithRoute(route *mux.Route) {
+func (hc *HandlerContext) buildWithRoute(route *mux.Route) {
+	if hc == nil {
+		return
+	}
 	hc.handlers = append(hc.middleware, hc.handlers...)
 	hc.count = len(hc.handlers)
 	route1 := route.Handler(hc)
@@ -59,58 +71,82 @@ func (hc *HandlerBuilder) buildWithRoute(route *mux.Route) {
 }
 
 //Methods #
-func (hc *HandlerBuilder) Methods(methods ...string) *HandlerBuilder {
+func (hc *HandlerContext) Methods(methods ...string) *HandlerContext {
+	if hc == nil {
+		return hc
+	}
 	hc.methods = append(hc.methods, methods...)
 	return hc
 }
 
 //Handle #
-func (hc *HandlerBuilder) Handle(handlers ...Handler) *HandlerBuilder {
+func (hc *HandlerContext) Handle(handlers ...Handler) *HandlerContext {
+	if hc == nil {
+		return hc
+	}
 	hc.handlers = append(hc.handlers, handlers...)
 	return hc
 }
 
 //Schemes #
-func (hc *HandlerBuilder) Schemes(schemes ...string) *HandlerBuilder {
+func (hc *HandlerContext) Schemes(schemes ...string) *HandlerContext {
+	if hc == nil {
+		return hc
+	}
 	hc.schemes = append(hc.schemes, schemes...)
 	return hc
 }
 
 //Headers #
-func (hc *HandlerBuilder) Headers(headers ...string) *HandlerBuilder {
+func (hc *HandlerContext) Headers(headers ...string) *HandlerContext {
+	if hc == nil {
+		return hc
+	}
 	hc.headers = append(hc.headers, headers...)
 	return hc
 }
 
 //Queries #
-func (hc *HandlerBuilder) Queries(queries ...string) *HandlerBuilder {
+func (hc *HandlerContext) Queries(queries ...string) *HandlerContext {
+	if hc == nil {
+		return hc
+	}
 	hc.queries = append(hc.queries, queries...)
 	return hc
 }
 
 //Path #
-func (hc *HandlerBuilder) Path(path string) *HandlerBuilder {
+func (hc *HandlerContext) Path(path string) *HandlerContext {
+	if hc == nil {
+		return hc
+	}
 	hc.path = path
 	return hc
 }
 
 //Name #
-func (hc *HandlerBuilder) Name(name string) *HandlerBuilder {
+func (hc *HandlerContext) Name(name string) *HandlerContext {
+	if hc == nil {
+		return hc
+	}
 	hc.name = name
 	return hc
 }
 
 //Compressed #
-func (hc *HandlerBuilder) Compressed(isCompressed bool) *HandlerBuilder {
+func (hc *HandlerContext) Compressed(isCompressed bool) *HandlerContext {
+	if hc == nil {
+		return hc
+	}
 	hc.compressed = isCompressed
 	return hc
 }
 
 //ServeHTTP #
-func (hc *HandlerBuilder) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (hc *HandlerContext) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	c := hc.mint.contextPool.Get().(*Context)
 	c.Reset()
-	c.HandlerBuilder = hc
+	c.HandlerContext = hc
 	c.URLParams = mux.Vars(req)
 	c.Request = req
 	c.Method = req.Method
@@ -120,7 +156,10 @@ func (hc *HandlerBuilder) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 //Use registers middleware
-func (hc *HandlerBuilder) Use(handler ...Handler) *HandlerBuilder {
+func (hc *HandlerContext) Use(handler ...Handler) *HandlerContext {
+	if hc == nil {
+		return hc
+	}
 	hc.middleware = append(hc.middleware, handler...)
 	return hc
 }

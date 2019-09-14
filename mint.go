@@ -11,8 +11,9 @@ import (
 )
 
 var (
-	mutex          sync.RWMutex
-	defaultHandler = []Handler{loggerMW}
+	mutex sync.RWMutex
+	//DefaultHandlerWithLogger middlewares including logger
+	DefaultHandlerWithLogger = []Handler{loggerMW}
 )
 
 //JSON basic json type
@@ -24,7 +25,7 @@ type Mint struct {
 	// defaultHandler is default middleware like logger, Custom Headers
 	defaultHandler []Handler
 	//handlers contains HandlersContext information
-	handlers         []*HandlerBuilder
+	handlers         []*HandlerContext
 	groupHandlers    []*HandlersGroup
 	store            map[string]interface{}
 	staticPath       string
@@ -34,13 +35,13 @@ type Mint struct {
 	gzipWriterPool   *sync.Pool
 	built            bool
 	strictSlash      bool
-	notFoundHandler  *HandlerBuilder
-	methodNotAllowed *HandlerBuilder
+	notFoundHandler  *HandlerContext
+	methodNotAllowed *HandlerContext
 }
 
 //Path sets URL Path to handler
-func (mt *Mint) Path(path string) *HandlerBuilder {
-	handlerContext := new(HandlerBuilder)
+func (mt *Mint) Path(path string) *HandlerContext {
+	handlerContext := new(HandlerContext)
 	mt.handlers = append(mt.handlers, handlerContext)
 	return handlerContext.Path(path)
 }
@@ -67,13 +68,13 @@ func (mt *Mint) Set(key string, value interface{}) {
 }
 
 //Handler registers single handlers context
-func (mt *Mint) Handler(hc *HandlerBuilder) *Mint {
+func (mt *Mint) Handler(hc *HandlerContext) *Mint {
 	mt.handlers = append(mt.handlers, hc)
 	return mt
 }
 
 //Handlers registers multiple handlers context
-func (mt *Mint) Handlers(hsc []*HandlerBuilder) *Mint {
+func (mt *Mint) Handlers(hsc []*HandlerContext) *Mint {
 	for _, handler := range hsc {
 		mt.Handler(handler)
 	}
@@ -81,13 +82,13 @@ func (mt *Mint) Handlers(hsc []*HandlerBuilder) *Mint {
 }
 
 //NotFoundHandler registers not found handler context
-func (mt *Mint) NotFoundHandler(hc *HandlerBuilder) {
+func (mt *Mint) NotFoundHandler(hc *HandlerContext) {
 	hc.mint = mt
 	mt.notFoundHandler = hc
 }
 
 //MethodNotAllowedHandler registers method not allowed handler
-func (mt *Mint) MethodNotAllowedHandler(hc *HandlerBuilder) {
+func (mt *Mint) MethodNotAllowedHandler(hc *HandlerContext) {
 	hc.mint = mt
 	mt.methodNotAllowed = hc
 }
@@ -169,9 +170,9 @@ func (mt *Mint) AddGroups(hgs []*HandlersGroup) *Mint {
 //New creates new application
 func New() *Mint {
 	mintEngine := Simple()
-	mintEngine.defaultHandler = defaultHandler
-	mintEngine.NotFoundHandler(new(HandlerBuilder).Handle(notFoundHandler))
-	mintEngine.MethodNotAllowedHandler(new(HandlerBuilder).Handle(methodNotAllowedHandler))
+	mintEngine.defaultHandler = DefaultHandlerWithLogger
+	mintEngine.NotFoundHandler(new(HandlerContext).Handle(notFoundHandler))
+	mintEngine.MethodNotAllowedHandler(new(HandlerContext).Handle(methodNotAllowedHandler))
 	return mintEngine
 }
 
@@ -213,18 +214,18 @@ func From(r Router, mt *Mint) *Mint {
 }
 
 //GET register get handler
-func (mt *Mint) GET(path string, handler Handler) *HandlerBuilder {
+func (mt *Mint) GET(path string, handler Handler) *HandlerContext {
 	return mt.SimpleHandler(path, http.MethodGet, handler)
 }
 
 //POST registers post handler
-func (mt *Mint) POST(path string, handler Handler) *HandlerBuilder {
+func (mt *Mint) POST(path string, handler Handler) *HandlerContext {
 	return mt.SimpleHandler(path, http.MethodPost, handler)
 }
 
 //SimpleHandler registers simple handler
-func (mt *Mint) SimpleHandler(path string, method string, handler ...Handler) *HandlerBuilder {
-	hc := new(HandlerBuilder)
+func (mt *Mint) SimpleHandler(path string, method string, handler ...Handler) *HandlerContext {
+	hc := new(HandlerContext)
 	hc.Methods(method)
 	hc.Handle(handler...)
 	hc.Path(path)
@@ -233,12 +234,12 @@ func (mt *Mint) SimpleHandler(path string, method string, handler ...Handler) *H
 }
 
 //PUT register simple PUT handler
-func (mt *Mint) PUT(path string, handler Handler) *HandlerBuilder {
+func (mt *Mint) PUT(path string, handler Handler) *HandlerContext {
 	return mt.SimpleHandler(path, http.MethodPut, handler)
 }
 
 //DELETE register simple delete handler
-func (mt *Mint) DELETE(path string, handler Handler) *HandlerBuilder {
+func (mt *Mint) DELETE(path string, handler Handler) *HandlerContext {
 	return mt.SimpleHandler(path, http.MethodDelete, handler)
 }
 

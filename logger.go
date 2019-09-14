@@ -94,7 +94,6 @@ func (l *Logger) Print() {
 		l.BodySize,
 	))
 	for _, err := range l.Errors {
-
-			fmt.Println(fmt.Errorf("%s", err.Error()))
+		fmt.Println(fmt.Errorf("%s", err.Error()))
 	}
 }

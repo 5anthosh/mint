@@ -9,19 +9,21 @@ import (
 	"strings"
 )
 
-var (
-	newLine     = []byte{'\n'}
+//constant
+const (
 	emptyString = ""
+	PayloadKey  = "PayLoad"
 )
+
 var (
-	jsonContentType  = []string{"application/json; charset=utf-8"}
-	cjsonContentType = []string{"application/json"}
+	newLine         = []byte{'\n'}
+	jsonContentType = []string{"application/json; charset=utf-8"}
 )
 
 //Context provides context for whole request/response cycle
 //It helps to pass variable from one middlware to another
 type Context struct {
-	*HandlerBuilder
+	*HandlerContext
 	Request   *http.Request
 	Response  http.ResponseWriter
 	Method    string
@@ -38,7 +40,7 @@ func (app *Mint) newContext() *Context {
 
 //Reset resets the value the context
 func (c *Context) Reset() {
-	c.HandlerBuilder = nil
+	c.HandlerContext = nil
 	c.Request = nil
 	c.Response = nil
 	c.status = 0
@@ -103,6 +105,7 @@ func (c *Context) compressedJSON(code int, reponse interface{}) {
 	if err != nil {
 		c.Errors(err)
 	}
+
 	size, err := gz.Write(jsonContentByte)
 	if err != nil {
 		c.Errors(err)
@@ -110,6 +113,7 @@ func (c *Context) compressedJSON(code int, reponse interface{}) {
 	c.setSize(size)
 	size, err = gz.Write(newLine)
 	c.setSize(size)
+
 	if err != nil {
 		c.Errors(err)
 	}
@@ -119,9 +123,9 @@ func (c *Context) compressedJSON(code int, reponse interface{}) {
 
 //JSON #
 func (c *Context) JSON(code int, response interface{}) {
-	c.SetHeader("Content-Type", []string{"application/json"})
+	c.SetHeader("Content-Type", jsonContentType)
 	if bodyAllowedForStatus(code) {
-		if c.HandlerBuilder.compressed {
+		if c.HandlerContext.compressed {
 			c.compressedJSON(code, response)
 		} else {
 			c.uncompressedJSON(code, response)
@@ -186,10 +190,10 @@ func (c *Context) ClientIP() string {
 
 //Next runs the next handler
 func (c *Context) Next() {
-	if c.index >= c.HandlerBuilder.count {
+	if c.index >= c.HandlerContext.count {
 		return
 	}
-	handle := c.HandlerBuilder.handlers[c.index]
+	handle := c.HandlerContext.handlers[c.index]
 	c.index++
 	handle(c)
 }
@@ -202,6 +206,26 @@ func (c *Context) GetURLQuery(query string) string {
 //Get #
 func (c *Context) Get(key interface{}) interface{} {
 	return c.Request.Context().Value(key)
+}
+
+//GetString gets string value using key in context
+func (c *Context) GetString(key interface{}) string {
+	return c.Get(key).(string)
+}
+
+//GetInt64 gets values associated with key as int64
+func (c *Context) GetInt64(key interface{}) int64 {
+	return c.Get(key).(int64)
+}
+
+//GetFloat64 gets values associated with key as float64
+func (c *Context) GetFloat64(key interface{}) float64 {
+	return c.Get(key).(float64)
+}
+
+//GetComplex128 gets values associated with key as complex128
+func (c *Context) GetComplex128(key interface{}) complex128 {
+	return c.Get(key).(complex128)
 }
 
 //Set #
