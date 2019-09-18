@@ -28,7 +28,7 @@ func main() {
 			"message": c.URLParams["message"],
 		})
 	})
-	r.Run("8080")
+	r.Run(":8080")
 }
 ```
    To run the program
