@@ -21,14 +21,14 @@ func (hg *HandlersGroup) build(parentRouter *mux.Router) {
 	}
 	route := parentRouter.PathPrefix(hg.basePath)
 	if hg.prefixHandler != nil {
-		hg.prefixHandler.mint = hg.mint
+		hg.prefixHandler.Mint = hg.mint
 		hg.prefixHandler.middleware = append(hg.middleware, hg.prefixHandler.middleware...)
 		hg.prefixHandler.buildWithRoute(route)
 		return
 	}
 	subrouter := route.Subrouter()
 	for _, handler := range hg.handlers {
-		handler.mint = hg.mint
+		handler.Mint = hg.mint
 		handler.middleware = append(hg.middleware, handler.middleware...)
 		handler.build(subrouter)
 	}

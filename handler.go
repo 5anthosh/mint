@@ -14,7 +14,7 @@ type Handlers []*HandlerContext
 
 //HandlerContext #
 type HandlerContext struct {
-	mint       *Mint
+	*Mint
 	middleware []Handler
 	handlers   []Handler
 	validator  Handler
@@ -144,7 +144,7 @@ func (hc *HandlerContext) Compressed(isCompressed bool) *HandlerContext {
 
 //ServeHTTP #
 func (hc *HandlerContext) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	c := hc.mint.contextPool.Get().(*Context)
+	c := hc.Mint.contextPool.Get().(*Context)
 	c.Reset()
 	c.HandlerContext = hc
 	c.URLParams = mux.Vars(req)
@@ -152,7 +152,7 @@ func (hc *HandlerContext) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	c.Method = req.Method
 	c.Response = w
 	c.Next()
-	hc.mint.contextPool.Put(c)
+	hc.Mint.contextPool.Put(c)
 }
 
 //Use registers middleware

@@ -83,13 +83,13 @@ func (mt *Mint) Handlers(hsc []*HandlerContext) *Mint {
 
 //NotFoundHandler registers not found handler context
 func (mt *Mint) NotFoundHandler(hc *HandlerContext) {
-	hc.mint = mt
+	hc.Mint = mt
 	mt.notFoundHandler = hc
 }
 
 //MethodNotAllowedHandler registers method not allowed handler
 func (mt *Mint) MethodNotAllowedHandler(hc *HandlerContext) {
-	hc.mint = mt
+	hc.Mint = mt
 	mt.methodNotAllowed = hc
 }
 
@@ -117,7 +117,7 @@ func (mt *Mint) buildViews() {
 	mt.router.StrictSlash(mt.strictSlash)
 	mt.buildOtherHandlers()
 	for _, handler := range mt.handlers {
-		handler.mint = mt
+		handler.Mint = mt
 		handler.middleware = append(mt.defaultHandler, handler.middleware...)
 		handler.build(mt.router)
 	}
@@ -244,15 +244,12 @@ func (mt *Mint) DELETE(path string, handler Handler) *HandlerContext {
 }
 
 //Run runs application
-func (mt *Mint) Run(port string) {
-	serverAdd := ":" + port
+func (mt *Mint) Run(serverAdd string) {
 	fmt.Println("🚀  Starting server....")
-
 	protocal := "http"
-	var err error
 	localAddress := protocal + "://localhost" + serverAdd
 	fmt.Println("🌠 Ready on " + localAddress)
-	err = http.ListenAndServe(serverAdd, handlers.RecoveryHandler()(mt.Build()))
+	err := http.ListenAndServe(serverAdd, handlers.RecoveryHandler()(mt.Build()))
 	if err != nil {
 		fmt.Println("Stopping the server" + err.Error())
 	}

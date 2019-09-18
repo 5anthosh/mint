@@ -99,7 +99,7 @@ func (c *Context) compressedJSON(code int, reponse interface{}) {
 	c.SetHeader("Content-Encoding", []string{"gzip"})
 	// Gzip data
 	c.Status(code)
-	gz := c.mint.gzipWriterPool.Get().(*gzip.Writer)
+	gz := c.Mint.gzipWriterPool.Get().(*gzip.Writer)
 	gz.Reset(c.Response)
 	jsonContentByte, err := json.Marshal(reponse)
 	if err != nil {
@@ -118,7 +118,7 @@ func (c *Context) compressedJSON(code int, reponse interface{}) {
 		c.Errors(err)
 	}
 	gz.Close()
-	c.mint.gzipWriterPool.Put(gz)
+	c.Mint.gzipWriterPool.Put(gz)
 }
 
 //JSON #
