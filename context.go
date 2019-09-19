@@ -101,24 +101,23 @@ func bodyAllowedForStatus(status int) bool {
 	return true
 }
 
-func (c *Context) jsonMarshal(reponse interface{}) []byte {
-	jsonContentByte, err := json.Marshal(reponse)
-	if err != nil {
-		c.Errors(err)
-	}
-	return jsonContentByte
-}
-
 //CJSON writes compressed json response
 func (c *Context) compressedJSON(code int, response interface{}) {
 	// create header
 	c.SetHeader(contentEncoding, gzipContentEncoding)
 	// Gzip data
 	c.Status(code)
+
 	gz := c.HandlerContext.Mint.gzipWriterPool.Get().(*gzip.Writer)
+	bytes := c.HandlerContext.Mint.bufferPool.Get()
 	gz.Reset(c.Res)
-	jsonContentByte := c.jsonMarshal(response)
-	size, err := gz.Write(jsonContentByte)
+	err := json.NewEncoder(bytes).Encode(response)
+	if err != nil {
+		c.Error(err)
+	}
+	size, err := gz.Write(bytes.Bytes())
+	c.HandlerContext.Mint.bufferPool.Put(bytes)
+
 	if err != nil {
 		c.Errors(err)
 	}
@@ -150,8 +149,14 @@ func (c *Context) JSON(code int, response interface{}) {
 //JSON writes json response
 func (c *Context) uncompressedJSON(code int, response interface{}) {
 	c.Status(code)
-	jsonContentByte := c.jsonMarshal(response)
-	size, err := c.Res.Write(jsonContentByte)
+	bytes := c.HandlerContext.Mint.bufferPool.Get()
+	err := json.NewEncoder(bytes).Encode(response)
+	if err != nil {
+		c.Error(err)
+	}
+	size, err := c.Res.Write(bytes.Bytes())
+	c.HandlerContext.Mint.bufferPool.Put(bytes)
+
 	if err != nil {
 		c.Errors(err)
 	}

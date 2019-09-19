@@ -33,6 +33,7 @@ type Mint struct {
 	router           *mux.Router
 	contextPool      *sync.Pool
 	gzipWriterPool   *sync.Pool
+	bufferPool       *BufferPool
 	built            bool
 	strictSlash      bool
 	notFoundHandler  *HandlerContext
@@ -201,6 +202,7 @@ func Simple() *Mint {
 			return gzip.NewWriter(nil)
 		},
 	}
+	mintEngine.bufferPool = NewBufferPool()
 	mintEngine.store = make(map[string]interface{})
 	mintEngine.router = NewRouter()
 	mintEngine.built = false
