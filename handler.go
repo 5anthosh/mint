@@ -6,18 +6,18 @@ import (
 	"github.com/gorilla/mux"
 )
 
-//Handler handles requests for an URL
-type Handler func(*Context)
+//HandlerFunc handles requests for an URL
+type HandlerFunc func(*Context)
 
 //Handlers chain of Handler
 type Handlers []*HandlerContext
 
 //HandlerContext #
 type HandlerContext struct {
-	*Mint
-	middleware []Handler
-	handlers   []Handler
-	validator  Handler
+	Mint       *Mint
+	middleware []HandlerFunc
+	handlers   []HandlerFunc
+	validator  HandlerFunc
 	count      int
 	methods    []string
 	schemes    []string
@@ -80,7 +80,7 @@ func (hc *HandlerContext) Methods(methods ...string) *HandlerContext {
 }
 
 //Handle #
-func (hc *HandlerContext) Handle(handlers ...Handler) *HandlerContext {
+func (hc *HandlerContext) Handle(handlers ...HandlerFunc) *HandlerContext {
 	if hc == nil {
 		return hc
 	}
@@ -147,16 +147,15 @@ func (hc *HandlerContext) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	c := hc.Mint.contextPool.Get().(*Context)
 	c.Reset()
 	c.HandlerContext = hc
-	c.URLParams = mux.Vars(req)
-	c.Request = req
-	c.Method = req.Method
-	c.Response = w
+	c.params = mux.Vars(req)
+	c.Req = req
+	c.Res = w
 	c.Next()
 	hc.Mint.contextPool.Put(c)
 }
 
 //Use registers middleware
-func (hc *HandlerContext) Use(handler ...Handler) *HandlerContext {
+func (hc *HandlerContext) Use(handler ...HandlerFunc) *HandlerContext {
 	if hc == nil {
 		return hc
 	}

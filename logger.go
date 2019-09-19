@@ -84,7 +84,7 @@ func (l *Logger) Print() {
 	statusColor := l.getStatusCodeColor()
 	methodColor := l.getMethodColor()
 	resetColor := l.getResetColor()
-	fmt.Println(fmt.Sprintf("[Service] %v |%s %3d %s| %13v | %15s |%s %-7s %s| %s > %v Bytes",
+	fmt.Println(fmt.Sprintf("[Mint] %v |%s %3d %s| %13v | %15s |%s %-7s %s| %s > %v Bytes",
 		l.TimeStamp.Format("2006/01/02 - 15:04:05"),
 		statusColor, l.StatusCode, resetColor,
 		l.Latency,

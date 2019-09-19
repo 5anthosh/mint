@@ -8,12 +8,12 @@ import (
 //LoggerMW logger middleware
 func loggerMW(c *Context) {
 	start := time.Now()
-	path := c.Request.URL.Path
+	path := c.URI()
 	c.Next()
 	log := new(Logger)
 	log.TimeStamp = time.Now()
 	log.Latency = log.TimeStamp.Sub(start)
-	log.Method = c.Method
+	log.Method = c.Req.Method
 	log.StatusCode = c.status
 	log.ClientIP = c.ClientIP()
 	log.BodySize = c.size

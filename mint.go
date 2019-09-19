@@ -13,7 +13,7 @@ import (
 var (
 	mutex sync.RWMutex
 	//DefaultHandlerWithLogger middlewares including logger
-	DefaultHandlerWithLogger = []Handler{loggerMW}
+	DefaultHandlerWithLogger = []HandlerFunc{loggerMW}
 )
 
 //JSON basic json type
@@ -23,7 +23,7 @@ type JSON map[string]interface{}
 //Create Intance of Mint using New() method
 type Mint struct {
 	// defaultHandler is default middleware like logger, Custom Headers
-	defaultHandler []Handler
+	defaultHandler []HandlerFunc
 	//handlers contains HandlersContext information
 	handlers         []*HandlerContext
 	groupHandlers    []*HandlersGroup
@@ -53,11 +53,11 @@ func (mt *Mint) StrictSlash(strictSlash bool) *Mint {
 }
 
 //Get the value from store by key
-func (mt *Mint) Get(key string) interface{} {
+func (mt *Mint) Get(key string) (interface{}, bool) {
 	mutex.RLock()
-	value := mt.store[key]
+	value, ok := mt.store[key]
 	mutex.RUnlock()
-	return value
+	return value, ok
 }
 
 //Set the value to store with key
@@ -141,7 +141,7 @@ func (mt *Mint) buildOtherHandlers() {
 	handlers = append(mt.defaultHandler, mt.methodNotAllowed.middleware...)
 	handlers = append(handlers, mt.methodNotAllowed.handlers...)
 	mt.methodNotAllowed.count = len(handlers)
-	mt.notFoundHandler.handlers = handlers
+	mt.methodNotAllowed.handlers = handlers
 	mt.router.MethodNotAllowedHandler = mt.methodNotAllowed
 }
 
@@ -177,7 +177,7 @@ func New() *Mint {
 }
 
 //Use register new middleware
-func (mt *Mint) Use(handler ...Handler) {
+func (mt *Mint) Use(handler ...HandlerFunc) {
 	mt.defaultHandler = append(mt.defaultHandler, handler...)
 }
 
@@ -214,17 +214,17 @@ func From(r Router, mt *Mint) *Mint {
 }
 
 //GET register get handler
-func (mt *Mint) GET(path string, handler Handler) *HandlerContext {
+func (mt *Mint) GET(path string, handler HandlerFunc) *HandlerContext {
 	return mt.SimpleHandler(path, http.MethodGet, handler)
 }
 
 //POST registers post handler
-func (mt *Mint) POST(path string, handler Handler) *HandlerContext {
+func (mt *Mint) POST(path string, handler HandlerFunc) *HandlerContext {
 	return mt.SimpleHandler(path, http.MethodPost, handler)
 }
 
 //SimpleHandler registers simple handler
-func (mt *Mint) SimpleHandler(path string, method string, handler ...Handler) *HandlerContext {
+func (mt *Mint) SimpleHandler(path string, method string, handler ...HandlerFunc) *HandlerContext {
 	hc := new(HandlerContext)
 	hc.Methods(method)
 	hc.Handle(handler...)
@@ -234,12 +234,12 @@ func (mt *Mint) SimpleHandler(path string, method string, handler ...Handler) *H
 }
 
 //PUT register simple PUT handler
-func (mt *Mint) PUT(path string, handler Handler) *HandlerContext {
+func (mt *Mint) PUT(path string, handler HandlerFunc) *HandlerContext {
 	return mt.SimpleHandler(path, http.MethodPut, handler)
 }
 
 //DELETE register simple delete handler
-func (mt *Mint) DELETE(path string, handler Handler) *HandlerContext {
+func (mt *Mint) DELETE(path string, handler HandlerFunc) *HandlerContext {
 	return mt.SimpleHandler(path, http.MethodDelete, handler)
 }
 

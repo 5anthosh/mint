@@ -7,7 +7,7 @@ import (
 //HandlersGroup #
 type HandlersGroup struct {
 	mint          *Mint
-	middleware    []Handler
+	middleware    []HandlerFunc
 	basePath      string
 	prefixHandler *HandlerContext
 	router        *mux.Router
@@ -103,7 +103,7 @@ func (hg *HandlersGroup) Group(pathPrefix string) *HandlersGroup {
 }
 
 //Use register new middleware
-func (hg *HandlersGroup) Use(handler ...Handler) *HandlersGroup {
+func (hg *HandlersGroup) Use(handler ...HandlerFunc) *HandlersGroup {
 	if hg == nil {
 		return hg
 	}
@@ -139,7 +139,7 @@ func (hg *HandlersGroup) Queries(queries ...string) *HandlersGroup {
 }
 
 //SimpleHandler registers simple handler
-func (hg *HandlersGroup) SimpleHandler(path string, method string, handler ...Handler) *HandlerContext {
+func (hg *HandlersGroup) SimpleHandler(path string, method string, handler ...HandlerFunc) *HandlerContext {
 	if hg == nil {
 		return nil
 	}
