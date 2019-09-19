@@ -1,4 +1,4 @@
-# Mint web framework
+# 🌿 Mint web framework
 
   it is simple lightweight web framework, it helps to keep the core simple but extensible. Mint uses gorilla mux router.
   Mint does not include a database abstraction layer or body validation or anything else 
