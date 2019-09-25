@@ -1,4 +1,4 @@
-# 🌿 Mint web framework
+# 🌿 Mint web framework [![GoDoc](https://godoc.org/github.com/5anthosh/mint?status.svg)](https://godoc.org/github.com/5anthosh/mint) [![Go Report Card](https://goreportcard.com/badge/github.com/5anthosh/mint)](https://goreportcard.com/report/github.com/5anthosh/mint) 
 
 it is simple lightweight web framework, it helps to keep the core simple but extensible. Mint uses gorilla mux router.
 Mint does not include a database abstraction layer or body validation or anything else
