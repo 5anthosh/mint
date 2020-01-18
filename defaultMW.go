@@ -33,8 +33,9 @@ func ErrorMessage(c *Context, code int, message string) {
 	errResponse["code"] = code
 	errResponse["message"] = message
 	rootResponse["error"] = errResponse
-	c.JSON(http.StatusMethodNotAllowed, rootResponse)
+	c.JSON(code, rootResponse)
 }
+
 func methodNotAllowedHandler(c *Context) {
 	ErrorMessage(c, http.StatusMethodNotAllowed, "Method not allowed")
 }

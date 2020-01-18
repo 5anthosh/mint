@@ -66,7 +66,7 @@ func (c *Context) GetHeader(key string) string {
 	return c.Req.Header.Get(key)
 }
 
-//Status set http status code
+//Status set http status code'
 func (c *Context) Status(status int) {
 	c.status = status
 	c.Res.WriteHeader(status)
@@ -233,12 +233,12 @@ func (c *Context) Query(key string) (string, bool) {
 }
 
 //DefaultQuery #
-func (c *Context) DefaultQuery(key string, defaultv string) (string, bool) {
+func (c *Context) DefaultQuery(key string, defaultv string) string {
 	value, ok := c.Query(key)
 	if ok {
-		return value, ok
+		return value
 	}
-	return defaultv, ok
+	return defaultv
 }
 
 //QueryValues #
