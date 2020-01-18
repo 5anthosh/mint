@@ -22,12 +22,12 @@ import "github.com/5anthosh/mint"
 
 func main() {
   r := mint.New()
-
-	r.GET("/{message}", func(c *mint.Context) {
-		c.JSON(200, mint.JSON{
-			"message": c.DefaultParam("message", "Hello World !"),
-		})
+  
+  r.GET("/{message}", func(c *mint.Context) {
+	c.JSON(200, mint.JSON{
+	"message": c.DefaultParam("message", "Hello World !"),
 	})
+  })
 
   r.Run(":8080")
 }
