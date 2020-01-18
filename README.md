@@ -18,7 +18,7 @@ In example.go file
 ```go
 package main
 
-import "github.com/5anthosh/mint"`tou
+import "github.com/5anthosh/mint"
 
 func main() {
   r := mint.New()
